@@ -55,12 +55,14 @@ unsigned char rot_right_carry(unsigned char reg, struct registers *cpu);
 unsigned char rot_left_carry(unsigned char reg, struct registers *cpu);
 
 //bitwise instructions
+unsigned short get_bit(unsigned short *reg, int pos );
 int set_bit(unsigned short *reg, int pos ,unsigned char value);
 unsigned short get_bit(unsigned short *reg, int pos);
 void swap_nibble(unsigned char *reg);
 void sra(unsigned char *reg, struct registers *cpu);
 void srl(unsigned char *reg, struct registers *cpu);
 void sla(unsigned char *reg, struct registers *cpu);
+void compliment_carry_flag(struct registers *cpu);
 
 
 //Helpful Macros
@@ -89,4 +91,8 @@ void sla(unsigned char *reg, struct registers *cpu);
 #define SET_HF(r, val) set_bit(&(r->af), 1, val)
 #define SET_CF(r, val) set_bit(&(r->af), 0, val)
 
+#define GET_ZF(r) get_bit(&(r->af), 3)
+#define GET_NF(r) get_bit(&(r->af), 2)
+#define GET_HF(r) get_bit(&(r->af), 1)
+#define GET_CF(r) get_bit(&(r->af), 0)
 

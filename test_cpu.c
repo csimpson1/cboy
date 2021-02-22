@@ -230,36 +230,26 @@ void test_set_8b_register_macros(){
     assert(get_low_byte(reg.hl) == 8);
 
     printf("set_8b_register_macros tests passed\n");
-    /*DEBUG. REMOVE THIS EVENTUALLY
-    int x = 6;
-    int *xPtr = &x;
-    *xPtr += 1;
-    printf("%i\n", x);
-
-    unsigned char oFlow = 0xFFFF;
-    oFlow ++;
-    assert(oFlow == 0);
-
-    printf("%x\n", (1 << 7));
-
-    */
 }
 
 void test_get_next_byte(){
     struct registers reg;
     init_registers(&reg);
 
-    printf("pcounter: %i\n", reg.pc);
+    //printf("pcounter: %i\n", reg.pc);
 
     char memory[0xFFFF] = {};
 
     memory[1] =  0x01; //LD B with something...
 
-    printf("1st Loc: %i\n2nd Loc:%i\n", memory[0], memory[1]);
+    //printf("1st Loc: %i\n2nd Loc:%i\n", memory[0], memory[1]);
     char byte1 = get_next_byte(&(reg.pc), memory);
     char byte2 = get_next_byte(&(reg.pc), memory);
 
-    printf("Byte1: %i\nByte2: %i\n", byte1, byte2);
+    assert(byte1 == 0);
+    assert(byte2 == 1);
+
+    //printf("Byte1: %i\nByte2: %i\n", byte1, byte2);
     printf("test_get_next_byte tests passed\n");
 }
 
@@ -267,7 +257,7 @@ void test_rotate_functions(){
     struct registers cpu;
     struct registers *cpuPtr = &cpu;
     init_registers(cpuPtr);
-    printf("%x\n", GET_F(cpuPtr));
+    //printf("%x\n", GET_F(cpuPtr));
 
     SET_A(cpuPtr, 0x83); //0x83 = 10000011
     SET_B(cpuPtr, 0x83);
@@ -289,7 +279,7 @@ void test_rotate_functions(){
 
     unsigned char newCVal = rot_left(GET_C(cpuPtr));
     SET_C(cpuPtr, newCVal);
-    printf("C = %x\n", GET_C(cpuPtr));
+    //printf("C = %x\n", GET_C(cpuPtr));
     assert(GET_C(cpuPtr) == 0x7);
     SET_C(cpuPtr, 0);
 
@@ -340,6 +330,20 @@ void test_swap_nibble(){
     printf("swap_nibble tests passed\n");
 }
 
+void test_compliment_carry_flag(){
+    struct registers cpu;
+
+    init_registers(&cpu);
+
+    compliment_carry_flag(&cpu);
+    assert(GET_CF((&cpu)) == 1);
+    compliment_carry_flag(&cpu);
+    assert(GET_CF((&cpu)) == 0);
+
+    printf("compliment_carry_flag tests passed\n");
+
+}
+
 int main(){
 
 	test_set_low_byte();
@@ -360,7 +364,7 @@ int main(){
     test_get_bit();
     test_rotate_functions();
     test_swap_nibble();
-
+    test_compliment_carry_flag();
 	return 0;
 }
 

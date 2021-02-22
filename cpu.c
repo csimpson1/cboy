@@ -52,7 +52,7 @@ int set_low_byte(unsigned short *reg, unsigned char value){
 //
 int set_bit(unsigned short *reg, int pos ,unsigned char value){
     //We're setting an individual bit, so reject any value that doesn't make sense
-    printf("%x\n",*reg);
+
     if (value != 0 && value !=1){
         return 1;
     }
@@ -66,7 +66,7 @@ int set_bit(unsigned short *reg, int pos ,unsigned char value){
 
     *reg = *reg & mask;
     *reg = *reg | valToSet;
-    printf("%x\n", *reg);
+
     return 0;
 }
 
@@ -110,6 +110,25 @@ void sla(unsigned char *reg, struct registers *cpu){
     unsigned char bit7 = ((*reg) & 0x80) >> 7; //10000000
     *reg = (*reg) << 1;
     SET_CF(cpu, bit7);
+}
+
+void compliment_carry_flag(struct registers *cpu){
+    unsigned char cf = GET_CF(cpu);
+
+    switch(cf){
+        case 0:{
+            SET_CF(cpu, 1);
+            break;
+        }
+
+        case 1:{
+            SET_CF(cpu, 0);
+            break;
+        }
+
+    }
+
+    return;
 }
 
 
