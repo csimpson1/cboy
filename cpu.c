@@ -77,39 +77,42 @@ unsigned short get_bit(unsigned short *reg, int pos ){
 
 }
 
-void swap_nibble(unsigned char *reg){
-    unsigned char lower = *reg & 0xF;  // 00001111
-    unsigned char upper = *reg & 0xF0; // 11110000
+unsigned char swap_nibble(unsigned char reg){
+    unsigned char lower = reg & 0xF;  // 00001111
+    unsigned char upper = reg & 0xF0; // 11110000
 
     lower = lower << 4;
     upper = upper >> 4;
 
     unsigned char result = upper | lower;
-    *reg = result;
+    return result;
 }
 
-void sra(unsigned char *reg, struct registers *cpu){
+unsigned char sra(unsigned char reg, struct registers *cpu){
     //Shift right the contents of a register, set bit 7 to 0. Contents of 0 bit are copied to c flag
-    unsigned char bit0 = (*reg) & 1;
-    *reg = (((*reg) >> 1) & 0x7F); //01111111
+    unsigned char bit0 = reg & 1;
+    reg = ((reg >> 1) & 0x7F); //01111111
     SET_CF(cpu, bit0);
+    return reg;
 }
 
-void srl(unsigned char *reg, struct registers *cpu){
-    //Shift right the contents of a regsiter, leave bit 7 be. Contents of 0 bit are copied to c flag
-    unsigned char bit7 = (*reg) & 0x80; //10000000
-    unsigned char bit0 = (*reg) & 1;
+unsigned char srl(unsigned char reg, struct registers *cpu){
+    //Shift right the contents of a register, leave bit 7 be. Contents of 0 bit are copied to c flag
+    unsigned char bit7 = reg & 0x80; //10000000
+    unsigned char bit0 = reg & 1;
 
-    *reg = (*reg) >> 1;
-    *reg = ((*reg) & 0x7f) | bit7;
+    reg = reg >> 1;
+    reg = (reg & 0x7f) | bit7;
     SET_CF(cpu, bit0);
+    return reg;
 }
 
-void sla(unsigned char *reg, struct registers *cpu){
+unsigned char sla(unsigned char reg, struct registers *cpu){
     //Shift left the contents of a register, set bit 0 to 0. Contents of bit 7 are copied to c flag
-    unsigned char bit7 = ((*reg) & 0x80) >> 7; //10000000
-    *reg = (*reg) << 1;
-    SET_CF(cpu, bit7);
+    unsigned char bit7 = (reg & 0x80) >> 7; //10000000
+    reg = reg << 1;
+    SET_CF(cpu, bit7);\
+    return reg;
 }
 
 void compliment_carry_flag(struct registers *cpu){
@@ -131,8 +134,95 @@ void compliment_carry_flag(struct registers *cpu){
     return;
 }
 
+//arithmetic operations
+
+unsigned char add(unsigned char a, unsigned char reg, struct registers *cpu){
+    unsigned char sum = a + reg;
+    return sum;
+}
+
+unsigned char adc(unsigned char a, unsigned char reg, struct registers *cpu){
+    unsigned char sum = a + reg + GET_CF(cpu);
+    return sum;
+}
+
+unsigned char sub(unsigned char a, unsigned char reg, struct registers *cpu){
+    unsigned char dif = a - reg;
+    return dif;
+}
+
+unsigned char sbc(unsigned char a, unsigned char reg, struct registers *cpu){
+    unsigned char dif = a - reg - GET_CF(cpu);
+    return dif;
+}
+
+//conditional flag setting operations
+int check_and_set_zf(unsigned char result, struct registers *cpu){
+    unsigned char toSet;
+    if(result == 0){
+        toSet = 1;
+
+    }
+    else{
+        SET_CF(cpu, 0);
+        toSet = 0;
+    }
+
+    SET_CF(cpu, toSet);
+    return 1;
+}
+int check_and_set_hf(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu){
+ return 0;
+}
+int check_and_set_cf_8b(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu, unsigned char mode){
+    /*
+     Mode specifies if we are dealing with 8 or 16 bit integers, and an addition or subtraction
+     Mode 0: 8 bit add
+     Mode 1: 8 bit sub
 
 
+     When adding we have a carry operation if either
+
+     1) Our result is bigger than 8 (16) bits
+     2) Our result is smaller than either of the arguments (we overflowed)
+
+     When subtracting unsigned numers we will see an overflow
+     1) Our result will be larger than either of the arguments (?)
+     */
+
+     switch(mode){
+        unsigned char toSet;
+        case 0:{
+            if(result > 0xFF || result < arg1 || result < arg2){
+                toSet = 1;
+            }
+
+            else{
+                toSet = 0;
+            }
+
+            SET_CF(cpu, toSet);
+            return (int)toSet;
+
+        }
+
+        case 1:{
+            if (result > arg1 || result > arg2){
+                toSet = 1;
+
+            }
+
+            else{
+                toSet = 0;
+            }
+
+            SET_CF(cpu, toSet);
+            return (int)toSet;
+        }
+
+
+     }
+}
 
 
 

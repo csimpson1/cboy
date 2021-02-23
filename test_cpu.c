@@ -324,8 +324,8 @@ void test_get_bit(){
 
 void test_swap_nibble(){
     unsigned char toSwap = 0xF0;
-    swap_nibble(&toSwap);
-    assert(toSwap == 0x0F);
+    unsigned char newVal = swap_nibble(toSwap);
+    assert(newVal == 0x0F);
 
     printf("swap_nibble tests passed\n");
 }
@@ -341,6 +341,38 @@ void test_compliment_carry_flag(){
     assert(GET_CF((&cpu)) == 0);
 
     printf("compliment_carry_flag tests passed\n");
+
+}
+
+void test_shift_operations(){
+    struct registers cpu;
+    init_registers(&cpu);
+
+    //sra test
+    SET_A((&cpu), 0xFF); //11111111
+    unsigned char newAVal = sra(GET_A((&cpu)), &cpu);
+
+    SET_A((&cpu), newAVal);
+
+    assert(GET_A((&cpu)) == 0x7F); //01111111
+    assert(GET_CF((&cpu)) == 1);
+
+    //srl test
+    SET_B((&cpu), 0xBE); //10111110
+    unsigned char newBVal = srl(GET_B((&cpu)), &cpu);
+    SET_B((&cpu), newBVal);
+    assert(GET_B((&cpu)) == 0xDF); //11011111
+    assert(GET_CF((&cpu)) == 0);
+
+    //sla test
+    SET_C((&cpu), 0xDF);
+    unsigned char newCVal = sla(GET_C((&cpu)), &cpu);
+    SET_C((&cpu), newCVal);
+    assert(GET_C((&cpu)) == 0xBE);
+    printf("%x", GET_C((&cpu)));
+    assert(GET_CF((&cpu)) == 1);
+
+    printf("sra, srl, sra tests passed \n");
 
 }
 
@@ -365,6 +397,7 @@ int main(){
     test_rotate_functions();
     test_swap_nibble();
     test_compliment_carry_flag();
+    test_shift_operations();
 	return 0;
 }
 

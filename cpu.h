@@ -58,13 +58,23 @@ unsigned char rot_left_carry(unsigned char reg, struct registers *cpu);
 unsigned short get_bit(unsigned short *reg, int pos );
 int set_bit(unsigned short *reg, int pos ,unsigned char value);
 unsigned short get_bit(unsigned short *reg, int pos);
-void swap_nibble(unsigned char *reg);
-void sra(unsigned char *reg, struct registers *cpu);
-void srl(unsigned char *reg, struct registers *cpu);
-void sla(unsigned char *reg, struct registers *cpu);
+unsigned char swap_nibble(unsigned char reg);
+unsigned char sra(unsigned char reg, struct registers *cpu);
+unsigned char srl(unsigned char reg, struct registers *cpu);
+unsigned char sla(unsigned char reg, struct registers *cpu);
 void compliment_carry_flag(struct registers *cpu);
 
+//arithmetic instructions
+unsigned char add(unsigned char a, unsigned char reg, struct registers *cpu);
+unsigned char adc(unsigned char a, unsigned char reg, struct registers *cpu);
+unsigned char sub(unsigned char a, unsigned char reg, struct registers *cpu);
+unsigned char sbc(unsigned char a, unsigned char reg, struct registers *cpu);
 
+//conditional flag setting operations
+int check_and_set_zf(unsigned char result, struct registers *cpu);
+//No check_and_set_nf is needed, as we only set the flag if we did a subtraction
+int check_and_set_hf(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu);
+int check_and_set_cf_8b(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu, unsigned char mode);
 //Helpful Macros
 
 #define GET_A(rPtr) get_high_byte(rPtr->af)
