@@ -138,11 +138,23 @@ void compliment_carry_flag(struct registers *cpu){
 
 unsigned char add(unsigned char a, unsigned char reg, struct registers *cpu){
     unsigned char sum = a + reg;
+
+    //flags
+    check_and_set_zf(sum, cpu);
+    SET_NF(cpu, 0);
+    check_and_set_cf_8b(a, reg, sum, cpu,0);
+
     return sum;
 }
 
 unsigned char adc(unsigned char a, unsigned char reg, struct registers *cpu){
     unsigned char sum = a + reg + GET_CF(cpu);
+
+    //flags
+    check_and_set_zf(sum, cpu);
+    SET_NF(cpu, 0);
+    check_and_set_cf_8b(a, reg, sum, cpu,0);
+
     return sum;
 }
 
@@ -171,8 +183,41 @@ int check_and_set_zf(unsigned char result, struct registers *cpu){
     SET_CF(cpu, toSet);
     return 1;
 }
-int check_and_set_hf(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu){
- return 0;
+
+
+int check_and_set_hf_8b(unsigned char arg1, unsigned char arg2, struct registers *cpu){
+    /*
+    Get the low 4 bytes of each operand and add them together. Then see if we have a bit flipped at position 4
+    */
+    unsigned char toSet;
+
+    if((((0xF & arg1) + (0xF & arg2))&0x10) == 0x10){
+        toSet = 1;
+    }
+
+    else{
+        toSet = 0;
+    }
+
+    SET_HF(cpu, toSet);
+    return (int)toSet;
+}
+
+int check_and_set_hf_16b(unsigned char arg1, unsigned char arg2, struct registers *cpu){
+    /*
+    Get bits 8-11 of the arguments, and add them together. Then see if there is a flipped bit at position 12
+    */
+    unsigned short toSet;
+    if((((0xF00 & arg1) + (0xF00 & arg2)) & 0x1000) == 0x1000){
+        toSet = 1;
+    }
+    else{
+        toSet = 0;
+    }
+
+    SET_HF(cpu, toSet);
+    return (int)toSet;
+
 }
 int check_and_set_cf_8b(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu, unsigned char mode){
     /*
@@ -186,14 +231,14 @@ int check_and_set_cf_8b(unsigned char arg1, unsigned char arg2, unsigned char re
      1) Our result is bigger than 8 (16) bits
      2) Our result is smaller than either of the arguments (we overflowed)
 
-     When subtracting unsigned numers we will see an overflow
+     When subtracting unsigned numbers we will see an overflow
      1) Our result will be larger than either of the arguments (?)
      */
 
      switch(mode){
         unsigned char toSet;
         case 0:{
-            if(result > 0xFF || result < arg1 || result < arg2){
+            if(result < arg1 || result < arg2){
                 toSet = 1;
             }
 
@@ -220,8 +265,67 @@ int check_and_set_cf_8b(unsigned char arg1, unsigned char arg2, unsigned char re
             return (int)toSet;
         }
 
+        default:{
+            return -1;
+        }
 
      }
+}
+
+int check_and_set_cf_16b(unsigned short arg1, unsigned short arg2, unsigned short result, struct registers *cpu, unsigned char mode){
+    /*
+    This is annoying. Given that I can't overload the function, how can we reduce the amt of code?
+     Mode specifies if we are dealing with 8 or 16 bit integers, and an addition or subtraction
+     Mode 0: 8 bit add
+     Mode 1: 8 bit sub
+
+
+     When adding we have a carry operation if either
+
+     1) Our result is bigger than 8 (16) bits
+     2) Our result is smaller than either of the arguments (we overflowed)
+
+     When subtracting unsigned numers we will see an overflow
+     1) Our result will be larger than either of the arguments (?)
+     */
+
+     switch(mode){
+        unsigned char toSet;
+        case 0:{
+            //if(result > 0xFFFF || result < arg1 || result < arg2){
+            if(result < arg1 || result < arg2){
+                toSet = 1;
+            }
+
+            else{
+                toSet = 0;
+            }
+
+            SET_CF(cpu, toSet);
+            return (int)toSet;
+
+        }
+
+        case 1:{
+            if (result > arg1 || result > arg2){
+                toSet = 1;
+
+            }
+
+            else{
+                toSet = 0;
+            }
+
+            SET_CF(cpu, toSet);
+            return (int)toSet;
+        }
+
+        default:{
+            return -1;
+        }
+
+     }
+
 }
 
 

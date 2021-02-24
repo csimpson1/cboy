@@ -73,8 +73,10 @@ unsigned char sbc(unsigned char a, unsigned char reg, struct registers *cpu);
 //conditional flag setting operations
 int check_and_set_zf(unsigned char result, struct registers *cpu);
 //No check_and_set_nf is needed, as we only set the flag if we did a subtraction
-int check_and_set_hf(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu);
+int check_and_set_hf(unsigned char arg1, unsigned char arg2, struct registers *cpu);
+int check_and_set_hf_16b(unsigned char arg1, unsigned char arg2, struct registers *cpu);
 int check_and_set_cf_8b(unsigned char arg1, unsigned char arg2, unsigned char result, struct registers *cpu, unsigned char mode);
+int check_and_set_cf_16b(unsigned short arg1, unsigned short arg2, unsigned short result, struct registers *cpu, unsigned char mode);
 //Helpful Macros
 
 #define GET_A(rPtr) get_high_byte(rPtr->af)
