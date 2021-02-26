@@ -49,29 +49,48 @@ class DBPopulater:
                 if row not in uniqueRows:
                     uniqueRows.append(row)
                     
-        print('finished getting operations')
-        """
-        for row in uniqueRows:
-            #DB can contain null values for the flag action
-            row = ['' if x == '-' else x for x in row]
-            print(f"inserting {row}")
-            self.cur.execute("insert into operation (mnemonic, zero_flag, subtract_flag, half_carry_flag, carry_flag) values (?, ?, ?, ?, ?)",
-                        (row[0], row[1], row[2], row[3], row[4]))
-        """   
-
+        print('finished getting operations') 
         print('inserting values into operation table')
         self.cur.executemany("insert into operation (mnemonic, zero_flag, subtract_flag, half_carry_flag, carry_flag) values (?, ?, ?, ?, ?)", uniqueRows)
         self.conn.commit()
         print('done inserting')
         
         
+    def get_operands(self):
         
+        uniqueOperands = []
+        
+        for type in ['unprefixed', 'cbprefixed']:
+            for code in self.opcodes[type]:
+                for operand in self.opcodes[type][code]['operands']:
+                    name = operand['name']
+                    print(operand)
+                    if 'bytes' in operand:
+                        bytes = operand['bytes']
                 
+                    else:
+                        bytes = 0
+                        
+                    
+                    row = (name, bytes)
+                
+                    if row not in uniqueOperands:
+                        uniqueOperands.append(row)
+                
+        for row in uniqueOperands:
+            print(row)
+                         
+        print('finished getting operands')
+        print('inserting values into operand table')
+        self.cur.executemany('insert into operand (name, size) values (?, ?)', uniqueOperands)
+        self.conn.commit()
+        print('done inserting')
         
 
 
 if __name__ == '__main__':
     codes = DBPopulater()
-    codes.populate_operation()
+    #codes.populate_operation()
+    codes.get_operands()
     codes.cleanup()
     
