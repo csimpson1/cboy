@@ -9,9 +9,8 @@ create or replace table operation(
 	
 create or replace table operand(
 	operand_id int auto_increment primary key,
-	name char(3) not null,
-	size int not null,
-	description char(50) not null
+	name char(10) not null,
+	size int not null
 );
 
 create or replace table opcode(
@@ -29,3 +28,16 @@ create or replace table instruction(
 	op_order int not null,
 	op_immediate bool not null
 );
+
+select * from operation;
+select * from operand;
+
+select count(1) as operation_count, mnemonic
+from operation
+group by mnemonic
+having operation_count > 1;
+
+
+
+select * from operation;
+select * from opcode;

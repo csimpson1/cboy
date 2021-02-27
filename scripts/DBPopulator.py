@@ -5,6 +5,7 @@ import requests
 import sys
 
 
+
 class DBPopulater:
     
     def __init__(self):
@@ -32,9 +33,16 @@ class DBPopulater:
         return cur
     
     def cleanup(self):
-        self.conn.close()
+        print('--------------------')
+        print('truncating operand, operation, opcode, instruction tables')
+        self.cur.execute("truncate table operand")
+        self.cur.execute("truncate table operation")
+        self.cur.execute("truncate table opcode")
+        self.cur.execute("truncate table instruction")
+        print('done')
+        print('--------------------')
     
-    def populate_operation(self):
+    def get_operations(self):
         #Get the unique operations from the set of opcodes and populate the operation table
         
         uniqueRows = []
@@ -80,7 +88,7 @@ class DBPopulater:
   
         print('finished getting operands')
         print('inserting values into operand table')
-        self.cur.executemany('insert into operand (name, size) values (?, ?)', uniqueOperands)
+        self.cur.executemany('insert into operand (operand_name, size) values (?, ?)', uniqueOperands)
         self.conn.commit()
         print('done inserting')
         print('--------------------')
@@ -89,6 +97,17 @@ class DBPopulater:
     def get_opcodes(self):
         print('getting opcodes')
         codesToInsert = []
+        
+        query = """
+        select operation_id from operation 
+        where
+        mnemonic = ? and
+        zero_flag = ? and
+        subtract_flag = ? and
+        half_carry_flag = ? and
+        carry_flag = ?
+        """
+
         for type in ['unprefixed', 'cbprefixed']:
             for code in self.opcodes[type]:
                 opcode = self.opcodes[type][code]
@@ -115,46 +134,112 @@ class DBPopulater:
                 identifier = [opcode['mnemonic'], opcode['flags']['Z'], opcode['flags']['N'], opcode['flags']['H'], opcode['flags']['C']]
                 identifier = tuple(['' if x == '-' else x for x in identifier])
                 
-
-                query = """
-                select operation_id from operation
-                where 
-                mnemonic = ? and
-                zero_flag = ? and
-                subtract_flag = ? and
-                half_carry_flag = ? and
-                carry_flag = ?
-                """
-                
-                
                 self.cur.execute(query, identifier)
-                for result in self.cur:
-                    operationId = result[0]
-                    try:
-                        #If there's more than one operation id, then there's a problem and we need to shut down. Something about the data model is off
-                        test = result[1]
-                        print(f"Error when finding identifier for {name} {menmonic}. Multiple operation ids {operation_id}, {test} identified.")
-                        sys.exit(-1)
-                    except IndexError as e:
-                        pass
+                results = self.cur.fetchall()
                 
+                operationId = None
+                if len(results) > 1:
+                    print(f"Error when finding identifier for {name} {opcode['mnemonic']}. Multiple operation ids identified.")
+                    sys.exit(-1)
+                
+                elif len(results) == 0:
+                    print(f"Error when finding identifier for {name} {opcode['mnemonic']}. No Matching operation found")
+                else:
+                        operationId = results[0][0]
+                
+
                 values = (name, operationId, bytes, cycles, conditionalCycles)
                 codesToInsert.append(values)
         
         print('done getting opcodes')
         print('inserting opcodes into opcode table')
-        self.cur.executemany("insert into opcode (name, operation_id, bytes, cycles, conditional_cycles) values (?,?,?,?,?)", codesToInsert)
+        self.cur.executemany("insert into opcode (code, operation_id, bytes, cycles, conditional_cycles) values (?,?,?,?,?)", codesToInsert)
         self.conn.commit()
         print('done inserting')
         print('--------------------')
+        
+        
+    def get_instructions(self):
+        print('getting instructions')
+        instructionsToInsert = []
+        
+        opcodeQuery = """
+        select opcode_id from opcode
+        where
+        code=?
+        """
+        
+        operandQuery = """
+        select operand_id from operand
+        where operand_name=?
+        """
+        
+        for type in ['unprefixed', 'cbprefixed']:
+            for code in self.opcodes[type]:
+                # Get the opcode id
+                #print(str(code))
+                self.cur.execute(opcodeQuery, (str(code),))
+                results = self.cur.fetchall()
+                if len(results) > 1:
+                    print(f"Error when finding identifier for {code}. Multiple IDs {opcodeId}, {test} were found")
+                    sys.exit(-1)
+                elif len(results) == 0:
+                    opcode = None
+                    print(f"Error when finding identifier for {code}. No IDs found")
+                    sys.exit(-1)
+                else:
+                    opcodeId = results[0][0]
+                
+                
+                if not self.opcodes[type][code]['operands']:
+                    instructionsToInsert.append((opcodeId, None, None, None))
                     
+                else:
+                    operandCounter = 1
+                    for operand in self.opcodes[type][code]['operands']:
+                        name = operand['name']
+                        print(name)
+                        # Get the operand id
+                        self.cur.execute(operandQuery, (name,))
+                        results = self.cur.fetchall()
+                        
+                        operandId = None
+                        immediate = None
+                        if len(results) > 1:
+                            print(f"Error when finding identifier for {name}. Multiple IDs were found")
+                            sys.exit(-1)
+                        
+                        elif len(results) == 0:
+                            pass
+                        
+                        else:
+                            operandId = results[0][0]
+                            immediate = operand['immediate']
+                            
+                        instructionsToInsert.append((opcodeId, operandId, operandCounter, immediate))
+                        operandCounter += 1    
+                
+        print('done getting instruction linking')
+        print('inserting into instruction table')
+        self.cur.executemany('insert into instruction (opcode_id, operand_id, op_order, op_immediate) values (?, ?, ?, ?)', instructionsToInsert)
+        self.conn.commit()
+        print('done inserting')
+                        
+                                
+                        
+                        
+                
+
+                
                     
 
 
 if __name__ == '__main__':
     codes = DBPopulater()
-    codes.populate_operation()
+    codes.cleanup()
+    codes.get_operations()
     codes.get_operands()
     codes.get_opcodes()
-    codes.cleanup()
+    codes.get_instructions()
+    
     
