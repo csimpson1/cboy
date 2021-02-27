@@ -54,6 +54,7 @@ class DBPopulater:
         self.cur.executemany("insert into operation (mnemonic, zero_flag, subtract_flag, half_carry_flag, carry_flag) values (?, ?, ?, ?, ?)", uniqueRows)
         self.conn.commit()
         print('done inserting')
+        print('--------------------')
         
         
     def get_operands(self):
@@ -64,7 +65,6 @@ class DBPopulater:
             for code in self.opcodes[type]:
                 for operand in self.opcodes[type][code]['operands']:
                     name = operand['name']
-                    print(operand)
                     if 'bytes' in operand:
                         bytes = operand['bytes']
                 
@@ -77,20 +77,84 @@ class DBPopulater:
                     if row not in uniqueOperands:
                         uniqueOperands.append(row)
                 
-        for row in uniqueOperands:
-            print(row)
-                         
+  
         print('finished getting operands')
         print('inserting values into operand table')
         self.cur.executemany('insert into operand (name, size) values (?, ?)', uniqueOperands)
         self.conn.commit()
         print('done inserting')
+        print('--------------------')
+    
+    
+    def get_opcodes(self):
+        print('getting opcodes')
+        codesToInsert = []
+        for type in ['unprefixed', 'cbprefixed']:
+            for code in self.opcodes[type]:
+                opcode = self.opcodes[type][code]
+                
+                if type == 'cbprefixed':
+                    name = code[0:2] + "CB" + code[2:]
+                else:
+                    name = code
+                
+                bytes = self.opcodes[type][code]['bytes']
+                cycles = self.opcodes[type][code]['cycles'][0]
+
+                
+                try:
+                    conditionalCycles = self.opcodes[type][code]['cycles'][0]
+                
+                except IndexError as e:
+                    conditionalCycles = None
+                    
+                #Find the operation id
+                # The linkage needs to be performed based on the flags. Different operations have different 
+                # flag actions
+                
+                identifier = [opcode['mnemonic'], opcode['flags']['Z'], opcode['flags']['N'], opcode['flags']['H'], opcode['flags']['C']]
+                identifier = tuple(['' if x == '-' else x for x in identifier])
+                
+
+                query = """
+                select operation_id from operation
+                where 
+                mnemonic = ? and
+                zero_flag = ? and
+                subtract_flag = ? and
+                half_carry_flag = ? and
+                carry_flag = ?
+                """
+                
+                
+                self.cur.execute(query, identifier)
+                for result in self.cur:
+                    operationId = result[0]
+                    try:
+                        #If there's more than one operation id, then there's a problem and we need to shut down. Something about the data model is off
+                        test = result[1]
+                        print(f"Error when finding identifier for {name} {menmonic}. Multiple operation ids {operation_id}, {test} identified.")
+                        sys.exit(-1)
+                    except IndexError as e:
+                        pass
+                
+                values = (name, operationId, bytes, cycles, conditionalCycles)
+                codesToInsert.append(values)
         
+        print('done getting opcodes')
+        print('inserting opcodes into opcode table')
+        self.cur.executemany("insert into opcode (name, operation_id, bytes, cycles, conditional_cycles) values (?,?,?,?,?)", codesToInsert)
+        self.conn.commit()
+        print('done inserting')
+        print('--------------------')
+                    
+                    
 
 
 if __name__ == '__main__':
     codes = DBPopulater()
-    #codes.populate_operation()
+    codes.populate_operation()
     codes.get_operands()
+    codes.get_opcodes()
     codes.cleanup()
     
