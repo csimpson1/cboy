@@ -122,7 +122,7 @@ class DBPopulater:
 
                 
                 try:
-                    conditionalCycles = self.opcodes[type][code]['cycles'][0]
+                    conditionalCycles = self.opcodes[type][code]['cycles'][1]
                 
                 except IndexError as e:
                     conditionalCycles = None
@@ -175,10 +175,21 @@ class DBPopulater:
         """
         
         for type in ['unprefixed', 'cbprefixed']:
+    
+            
             for code in self.opcodes[type]:
                 # Get the opcode id
-                #print(str(code))
-                self.cur.execute(opcodeQuery, (str(code),))
+                
+                if type == 'cbprefixed':
+                    #Add in the CB prefix
+                    #Differentiate the prefixed opcode from the code variable
+                    #Code is still being used to reference an element in the opcodes JSON,
+                    #but might be incorrect when we select from the DB
+                    codeToSelect = '0xCB' + code[2:]
+                else:
+                     codeToSelect = code
+                
+                self.cur.execute(opcodeQuery, (str(codeToSelect),))
                 results = self.cur.fetchall()
                 if len(results) > 1:
                     print(f"Error when finding identifier for {code}. Multiple IDs {opcodeId}, {test} were found")
@@ -198,7 +209,7 @@ class DBPopulater:
                     operandCounter = 1
                     for operand in self.opcodes[type][code]['operands']:
                         name = operand['name']
-                        print(name)
+                        #print(name)
                         # Get the operand id
                         self.cur.execute(operandQuery, (name,))
                         results = self.cur.fetchall()
