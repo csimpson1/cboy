@@ -47,6 +47,7 @@ unsigned char get_next_byte(unsigned short *pcounter, char *mem);
 
 //interpret instructions
 int interpret_opcode(struct registers *reg, char opcode, char *mem, int *cycleCounter);
+int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cycleCounter);
 
 //rotate instructions
 unsigned char rot_right(unsigned char reg);
