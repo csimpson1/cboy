@@ -423,22 +423,22 @@ int set_8b_register(struct registers *reg, char name, unsigned char val){
 }
 
 //Rotate functions
-unsigned char rot_right(unsigned char reg){
+unsigned char rot_right(unsigned char reg, struct registers *cpu){
     unsigned char bit0 = reg & 0x1;
     unsigned char rotated = reg >> 1;
     rotated = (rotated & 0x7F) | (bit0 << 7); // 0x7F=01111111
 
-    check_and_setzf(rotated, reg);
+    check_and_set_zf(rotated, cpu);
 
     return rotated;
 }
 
-unsigned char rot_left(unsigned char reg){
+unsigned char rot_left(unsigned char reg, struct registers *cpu){
     unsigned char bit7 = (reg & 0x80) >> 7; // 0x80=10000000
     unsigned char rotated = reg << 1;
     rotated = (rotated & 0xFE) | bit7; // 0xFE=11111110
 
-    check_and_set_zf(rotated, reg);
+    check_and_set_zf(rotated, cpu);
 
     return rotated;
 }
@@ -541,7 +541,7 @@ int interpret_opcode(struct registers *reg, char opcode, char *mem, int *cycleCo
 
         case 0xCB:{
             unsigned short newCode = get_next_byte(&(reg->pc), mem);
-            interpret_ext_opcode(reg, newCode, mem, cycleCounter)
+            interpret_ext_opcode(reg, newCode, mem, cycleCounter);
         }
 
     }
@@ -561,8 +561,8 @@ int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cyc
             break;
         }
 
-        case 0x01{ //RLC C
-            unsigned char C = GET_C(reg);
+        case 0x01:{ //RLC C
+            unsigned char c = GET_C(reg);
             unsigned char cRotated = rot_left_carry(c, reg);
             SET_C(reg, cRotated);
 
@@ -571,7 +571,7 @@ int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cyc
             break;
         }
 
-        case 0x02{ //RLC D
+        case 0x02:{ //RLC D
             unsigned char d = GET_D(reg);
             unsigned char dRotated = rot_left_carry(d, reg);
             SET_D(reg, dRotated);
@@ -581,7 +581,7 @@ int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cyc
             break;
         }
 
-        case 0x03{ //RLC E
+        case 0x03:{ //RLC E
             unsigned char e = GET_E(reg);
             unsigned char eRotated = rot_left_carry(e, reg);
             SET_E(reg, eRotated);
@@ -591,7 +591,7 @@ int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cyc
             break;
         }
 
-        case 0x04{ //RLC H
+        case 0x04:{ //RLC H
             unsigned char h = GET_H(reg);
             unsigned char hRotated = rot_left_carry(h, reg);
             SET_H(reg, hRotated);
@@ -601,7 +601,7 @@ int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cyc
             break;
         }
 
-        case 0x05{ //RLC L
+        case 0x05:{ //RLC L
             unsigned char l = GET_L(reg);
             unsigned char lRotated = rot_left_carry(l, reg);
             SET_L(reg, lRotated);
@@ -611,14 +611,21 @@ int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cyc
             break;
         }
 
-        case 0x06{ //RLC (HL)
+        case 0x06:{ //RLC (HL)
+            unsigned short address = reg->hl;
+            unsigned short val = mem[address];
+            unsigned short valRotated = rot_left_carry(val, reg);
+            mem[address] = valRotated;
+
+            cycleCounter += 16;
+
             break;
         }
 
-        case 0x07{ //RLC A
+        case 0x07:{ //RLC A
             unsigned char a = GET_A(reg);
             unsigned char aRotated = rot_left_carry(a, reg);
-            SET_a(reg, aRotated);
+            SET_A(reg, aRotated);
 
             *cycleCounter += 8;
 

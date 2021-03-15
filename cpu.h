@@ -50,8 +50,8 @@ int interpret_opcode(struct registers *reg, char opcode, char *mem, int *cycleCo
 int interpret_ext_opcode(struct registers *reg, char opcode, char *mem, int *cycleCounter);
 
 //rotate instructions
-unsigned char rot_right(unsigned char reg);
-unsigned char rot_left(unsigned char reg);
+unsigned char rot_right(unsigned char reg, struct registers *cpu);
+unsigned char rot_left(unsigned char reg, struct registers *cpu);
 unsigned char rot_right_carry(unsigned char reg, struct registers *cpu);
 unsigned char rot_left_carry(unsigned char reg, struct registers *cpu);
 
