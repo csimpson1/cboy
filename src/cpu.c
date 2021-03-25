@@ -136,3 +136,119 @@ void _set_8b_to_16b(unsigned char *highByte, unsigned char *lowByte, unsigned sh
     *lowByte = lowByteVal;
 
 }
+
+//get and set bits
+unsigned short get_bit(int val, int pos){
+    //To deal with the short and char types we use in the CPU struct,
+    //cast them to an int first
+    unsigned short mask = 1 << pos;
+    unsigned short bitN = ((val) & mask) >> pos;
+    return bitN;
+}
+
+void set_bit_char(unsigned char *data, int pos, int value){
+     //We're setting an individual bit, so reject any value that doesn't make sense
+
+    if (value != 0 && value !=1){
+        return;
+    }
+
+    //flip the bits in the mask
+    unsigned short mask = 1 << pos;
+    mask = ~mask;
+
+    short valToSet = (value << pos);
+    //Zero out the position we want
+
+    *data = *data & mask;
+    *data = *data | valToSet;
+
+
+}
+
+void set_bit_short(unsigned short *data, int pos, int value){
+    if (value != 0 && value !=1){
+        return;
+    }
+
+    //flip the bits in the mask
+    unsigned short mask = 1 << pos;
+    mask = ~mask;
+
+    short valToSet = (value << pos);
+    //Zero out the position we want
+
+    *data = *data & mask;
+    *data = *data | valToSet;
+
+}
+
+void set_bit_16b_reg(CPU *cpu, int reg, int pos, unsigned char val){
+    //Dealing with the native 16b registers, program counter and stack pointer
+    if (reg == 5){
+        set_bit_short(&(cpu->pc), pos, val);
+    }
+
+    else if (reg == 6){
+        set_bit_short(&(cpu->sp), pos, val);
+    }
+
+    //If we're not dealing with the native 16 registers, need to figure out which specific register should be set
+    else if (0 <= pos && pos <=7){
+        switch(reg){
+            case 1:{
+                set_bit_char(&(cpu->f), pos, val);
+                break;
+            }
+
+            case 2:{
+                set_bit_char(&(cpu->c), pos, val);
+                break;
+            }
+
+            case 3:{
+                set_bit_char(&(cpu->e), pos, val);
+                break;
+            }
+
+            case 4:{
+                set_bit_char(&(cpu->l), pos, val);
+                break;
+            }
+        }
+    }
+
+    else if (8<= pos && pos <= 15){
+        switch (reg){
+            case 1:{
+                set_bit_char(&(cpu->a), pos % 8, val);
+                break;
+            }
+
+            case 2:{
+                set_bit_char(&(cpu->b), pos % 8, val);
+                break;
+            }
+
+            case 3:{
+                set_bit_char(&(cpu->d), pos % 8, val);
+                break;
+            }
+
+            case 4:{
+                set_bit_char(&(cpu->h), pos % 8, val);
+                break;
+            }
+
+        }
+    }
+}
+
+
+
+
+
+
+//swap nibble
+
+

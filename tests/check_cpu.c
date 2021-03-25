@@ -53,7 +53,7 @@ START_TEST(test_16b_register_functions){
     cpu.pc = 0xFFFE;
 
 
-    //ck_assert_int_eq(get_16b_register(&cpu, 1), 0xFF01);
+    ck_assert_int_eq(get_16b_register(&cpu, 1), 0xFF01);
     ck_assert_int_eq(get_16b_register(&cpu, 2), 0xFF02);
     ck_assert_int_eq(get_16b_register(&cpu, 3), 0xFF03);
     ck_assert_int_eq(get_16b_register(&cpu, 4), 0xFF04);
@@ -77,6 +77,58 @@ START_TEST(test_16b_register_functions){
 }
 END_TEST
 
+START_TEST(test_get_bit_functions){
+    CPU cpu = init_cpu();
+    cpu.a = 0xF0; //11110000
+    unsigned short testVal = 0xFF00; // 1111111100000000
+
+    ck_assert_int_eq(get_bit( (int)(cpu.a), 3), 0);
+    ck_assert_int_eq(get_bit( (int)(cpu.a), 4), 1);
+
+    ck_assert_int_eq(get_bit( (int)testVal, 3), 0);
+    ck_assert_int_eq(get_bit( (int)testVal, 9), 1);
+
+}
+END_TEST
+
+START_TEST(test_set_bit_short){
+    unsigned short testVal = 0xFF00; // 1111111100000000
+    set_bit_short(&testVal, 7, 1);
+    ck_assert_int_eq(testVal, 0xFF80);
+}
+END_TEST
+
+START_TEST(test_set_bit_char){
+    CPU cpu = init_cpu();
+    cpu.a = 0xF0; //11110000
+    set_bit_char(&(cpu.a), 3, 1);
+    ck_assert_int_eq(cpu.a, 0xF8);
+}
+END_TEST
+
+START_TEST(test_set_bit_16_register){
+    CPU cpu = init_cpu();
+    //Case 1: Set a native 16b register
+    set_bit_16b_reg(&cpu, 6, 0, 1);
+    set_bit_16b_reg(&cpu, 6, 1, 1);
+
+    ck_assert_int_eq(cpu.sp, 0x3);
+
+    //Case 2: Choose a position which will cause a high byte to be set
+    set_bit_16b_reg(&cpu, 2, 0, 1);
+    set_bit_16b_reg(&cpu, 2, 1, 1);
+
+    ck_assert_int_eq(cpu.c, 0x3);
+
+    //Case 3: Choose a position which will cause a low byte to be set
+    set_bit_16b_reg(&cpu, 2, 8, 1);
+    set_bit_16b_reg(&cpu, 2, 9, 1);
+
+    ck_assert_int_eq(cpu.b, 0x3);
+
+
+}
+END_TEST
 /*
 Tests for the bitwise instructions
 unsigned short get_bit(unsigned short *reg, int pos );
@@ -168,6 +220,10 @@ Suite * cpu_suite(){
     tcase_add_test(tcCore, test_init_cpu);
     tcase_add_test(tcCore, test_16b_byte_functions);
     tcase_add_test(tcCore, test_16b_register_functions);
+    tcase_add_test(tcCore, test_get_bit_functions);
+    tcase_add_test(tcCore, test_set_bit_short);
+    tcase_add_test(tcCore, test_set_bit_char);
+    tcase_add_test(tcCore, test_set_bit_16_register);
     suite_add_tcase(suite, tcCore);
     /*
     SUITE_ADD_TEST(suite, test_get_bit);

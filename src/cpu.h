@@ -32,4 +32,9 @@ unsigned short get_16b_register(CPU *cpu, int reg);
 void set_16b_register(CPU *cpu, int reg, unsigned short val);
 unsigned short _get_8b_to_16b(unsigned char *highByte, unsigned char *lowByte);
 void _set_8b_to_16b(unsigned char *highByte, unsigned char *lowByte, unsigned short val);
+
+unsigned short get_bit(int val, int pos);
+void set_bit_char(unsigned char *data, int pos, int value);
+void set_bit_short(unsigned short *data, int pos, int value);
+void set_bit_16b_reg(CPU *cpu, int reg, int pos, unsigned char val);
 #endif // CPU_H_
