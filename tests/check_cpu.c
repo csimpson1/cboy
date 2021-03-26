@@ -1,5 +1,6 @@
 #include "check.h"
 #include "../src/cpu.h"
+#include "../src/bit_functions.h"
 #include <stdlib.h>
 #include <stdio.h>
 /* Helper Functions */
