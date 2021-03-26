@@ -6,6 +6,7 @@ check_cpu.o:=./tests/check_cpu.o
 
 Test: $(cpu.o) $(check_cpu.o)
 	gcc -g $(cpu.o) $(check_cpu.o) -lcheck -lm -lpthread -lrt -o ./tests/check_cpu
+	./tests/check_cpu
 cpu.o: $(cpu.c)
 	gcc -g -c $(cpu.c)
 

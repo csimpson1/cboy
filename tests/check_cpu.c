@@ -85,18 +85,12 @@ START_TEST(test_get_bit_functions){
     ck_assert_int_eq(get_bit( (int)(cpu.a), 3), 0);
     ck_assert_int_eq(get_bit( (int)(cpu.a), 4), 1);
 
-    ck_assert_int_eq(get_bit( (int)testVal, 3), 0);
-    ck_assert_int_eq(get_bit( (int)testVal, 9), 1);
+    //ck_assert_int_eq(get_bit( (int)testVal, 3), 0);
+    //ck_assert_int_eq(get_bit( (int)testVal, 9), 1);
 
 }
 END_TEST
 
-START_TEST(test_set_bit_short){
-    unsigned short testVal = 0xFF00; // 1111111100000000
-    set_bit_short(&testVal, 7, 1);
-    ck_assert_int_eq(testVal, 0xFF80);
-}
-END_TEST
 
 START_TEST(test_set_bit_char){
     CPU cpu = init_cpu();
@@ -106,112 +100,13 @@ START_TEST(test_set_bit_char){
 }
 END_TEST
 
-START_TEST(test_set_bit_16_register){
-    CPU cpu = init_cpu();
-    //Case 1: Set a native 16b register
-    set_bit_16b_reg(&cpu, 6, 0, 1);
-    set_bit_16b_reg(&cpu, 6, 1, 1);
-
-    ck_assert_int_eq(cpu.sp, 0x3);
-
-    //Case 2: Choose a position which will cause a high byte to be set
-    set_bit_16b_reg(&cpu, 2, 0, 1);
-    set_bit_16b_reg(&cpu, 2, 1, 1);
-
-    ck_assert_int_eq(cpu.c, 0x3);
-
-    //Case 3: Choose a position which will cause a low byte to be set
-    set_bit_16b_reg(&cpu, 2, 8, 1);
-    set_bit_16b_reg(&cpu, 2, 9, 1);
-
-    ck_assert_int_eq(cpu.b, 0x3);
-
-
+START_TEST(test_swap_nibble){
+    unsigned char toSwap = 0xFE;
+    swap_nibble(&toSwap);
+    ck_assert_int_eq(toSwap, 0xEF);
 }
 END_TEST
-/*
-Tests for the bitwise instructions
-unsigned short get_bit(unsigned short *reg, int pos );
-int set_bit(unsigned short *reg, int pos ,unsigned char value);
-unsigned char swap_nibble(unsigned char reg);
-unsigned char sra(unsigned char reg, struct registers *cpu);
-unsigned char srl(unsigned char reg, struct registers *cpu);
-unsigned char sla(unsigned char reg, struct registers *cpu);
-void compliment_carry_flag(struct registers *cpu);
 
-
-void test_get_bit(CuTest *tc){
-    unsigned short cpuReg0 = 0;
-    unsigned short cpuReg1 = 0xFFFF; //1111111111111111
-    unsigned short bit0 = 0;
-    unsigned short bit1 = 0;
-
-    for (int i=0; i < 16; i++){
-        bit0 = get_bit(&cpuReg0, i);
-        bit1 = get_bit(&cpuReg1, i);
-        CuAssertTrue(tc, bit0 == 0);
-        CuAssertTrue(tc, bit1 == 1);
-    }
-}
-
-void test_set_bit(CuTest *tc){
-    unsigned short cpuReg = 0;
-    for (int i=0; i < 16; i++){
-        set_bit(&cpuReg, i, 1);
-        CuAssertTrue(tc, cpuReg == (1 << i));
-        cpuReg = 0;
-    }
-}
-
-void test_swap_nibble(CuTest *tc){
-    unsigned char toSwap = 0xF0;
-    unsigned char swapped = swap_nibble(toSwap);
-    CuAssertTrue(tc, swapped == 0x0F);
-}
-
-void test_sra(CuTest *tc){
-    //Create a new pointer to a registers struct
-    struct registers cpu = set_up_cpu();
-
-    SET_A((&cpu), 0xFF); //11111111
-    unsigned char newAVal = sra(GET_A((&cpu)), &cpu);
-    SET_A((&cpu), newAVal);
-
-    CuAssertTrue(tc, GET_A((&cpu)) == 0x7F); //01111111
-    CuAssertTrue(tc, GET_CF((&cpu)) == 1);
-}
-
-void test_srl(CuTest *tc){
-
-    struct registers cpu = set_up_cpu();
-
-    SET_B((&cpu), 0xBE); //10111110
-    unsigned char newBVal = srl(GET_B((&cpu)), &cpu);
-    SET_B((&cpu), newBVal);
-    CuAssertTrue(tc, GET_B((&cpu)) == 0xDF); //11011111
-    CuAssertTrue(tc, GET_CF((&cpu)) == 0);
-}
-
-void test_sla(CuTest *tc){
-    struct registers cpu = set_up_cpu();
-
-    SET_C((&cpu), 0xDF);
-    unsigned char newCVal = sla(GET_C((&cpu)), &cpu);
-    SET_C((&cpu), newCVal);
-    CuAssertTrue(tc, GET_C((&cpu)) == 0xBE);
-    CuAssertTrue(tc, GET_CF((&cpu)) == 1);
-
-}
-
-void test_compliment_carry_flag(CuTest *tc){
-    struct registers cpu = set_up_cpu();
-
-    compliment_carry_flag(&cpu);
-    CuAssertTrue(tc, GET_CF((&cpu)) == 1);
-    compliment_carry_flag(&cpu);
-    CuAssertTrue(tc, GET_CF((&cpu)) == 0);
-}
-*/
 
 Suite * cpu_suite(){
     Suite* suite = suite_create("CPU");
@@ -221,9 +116,10 @@ Suite * cpu_suite(){
     tcase_add_test(tcCore, test_16b_byte_functions);
     tcase_add_test(tcCore, test_16b_register_functions);
     tcase_add_test(tcCore, test_get_bit_functions);
-    tcase_add_test(tcCore, test_set_bit_short);
+    //tcase_add_test(tcCore, test_set_bit_short);
     tcase_add_test(tcCore, test_set_bit_char);
-    tcase_add_test(tcCore, test_set_bit_16_register);
+    //tcase_add_test(tcCore, test_set_bit_16_register);
+    tcase_add_test(tcCore, test_swap_nibble);
     suite_add_tcase(suite, tcCore);
     /*
     SUITE_ADD_TEST(suite, test_get_bit);
