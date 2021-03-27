@@ -25,7 +25,7 @@ unsigned char read_mem(unsigned char *mem, unsigned short address){
             return 0x0;
         }
 
-        case default:{
+        default:{
             return mem[address];
         }
     }
