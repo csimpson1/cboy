@@ -28,7 +28,7 @@ class ReportCreator:
             sys.exit(-1)
         
         cur = self.conn.cursor()
-        print("Connected to DB!")
+        print("Connected to DB")
         return cur
     
     def find_all_opcodes(self):
@@ -56,14 +56,17 @@ class ReportCreator:
         
         fPath = os.path.join(parentDir, 'src', 'cpu.c')
         
-        p = re.compile('case (0x\d\d)')
+        p = re.compile('case (0x..)')
         cases = []
         
         with open(fPath, 'r') as f:
             for line in f:
+                #print(line)
                 results = p.findall(line)
                 if results:
                     cases.append(results[0])
+                    #print(results)
+                   # print()
         
         return cases
     
@@ -83,8 +86,8 @@ class ReportCreator:
         
         summary = {}
         for (code,mnemonic) in self.total_opcodes:
-            print(code)
-            print(mnemonic)
+            #print(code)
+            #print(mnemonic)
             
             if mnemonic not in summary:
                 #Add the mnemonic in
@@ -115,15 +118,7 @@ class ReportCreator:
         
 if __name__ == '__main__':
     r = ReportCreator()
-    
-    """
-    p = re.compile(r"case (0x\d\d)")
-    line="        case 0x16:{ // LD D, d8"
-    print(p.findall(line))
-    """
-    
-    print(r.implemented_opcodes)
-    print(r.total_opcodes)
     r.output_base_rpt('opcodes.csv')
     r.output_summary_rpt('opcodes_summary.csv')
+    print("Reports created")
         
