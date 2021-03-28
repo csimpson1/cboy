@@ -238,12 +238,6 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
             increment_timer(mem, 8);
         }
 
-        case 0x0A:{ //LD A, (BC)
-            unsigned char data = read_mem(mem, GET_BC(cpu));
-            cpu->a = data;
-
-            increment_timer(mem, 8);
-        }
 
         case 0x0B:{ //DEC BC
             unsigned short newBC = GET_BC(cpu) - 1;
