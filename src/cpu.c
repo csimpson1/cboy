@@ -195,14 +195,6 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 
         }
 
-        case 0x02:{ //LD (BC) A
-            unsigned char addr = get_16b_register(cpu, 2); //Get the value of BC
-            write_mem(mem, addr, cpu->a);
-
-            increment_timer(mem,8);
-            break;
-
-        }
 
         case 0x03:{ //INC BC
             unsigned short val = get_16b_register(cpu, 2);
@@ -212,14 +204,6 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
             increment_timer(mem, 8);
             break;
 
-        }
-
-
-        case 0x06:{ //LD B, d8
-            unsigned char data = get_byte(cpu, mem);
-            cpu->b = data;
-
-            increment_timer(mem, 8);
         }
 
         case 0x07:{ //RCLA
@@ -415,13 +399,13 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
         *************************/
 		case 0x02:{ // LD BC, A
 			unsigned char src = cpu->a;
-			write_mem(cpu, GET_BC(cpu), src);
+			write_mem(mem, GET_BC(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x06:{ // LD B, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->b = src;
 			increment_timer(mem, 8);
 			break;
@@ -435,7 +419,7 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x0E:{ // LD C, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->c = src;
 			increment_timer(mem, 8);
 			break;
@@ -443,13 +427,13 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 
 		case 0x12:{ // LD DE, A
 			unsigned char src = cpu->a;
-			write_mem(cpu, GET_DE(cpu), src);
+			write_mem(mem, GET_DE(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x16:{ // LD D, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->d = src;
 			increment_timer(mem, 8);
 			break;
@@ -463,7 +447,7 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x1E:{ // LD E, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->e = src;
 			increment_timer(mem, 8);
 			break;
@@ -471,14 +455,14 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 
 		case 0x22:{ // LD HL, A
 			unsigned char src = cpu->a;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			SET_HL(cpu, GET_HL(cpu) + 1);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x26:{ // LD H, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->h = src;
 			increment_timer(mem, 8);
 			break;
@@ -493,7 +477,7 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x2E:{ // LD L, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->l = src;
 			increment_timer(mem, 8);
 			break;
@@ -501,15 +485,15 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 
 		case 0x32:{ // LD HL, A
 			unsigned char src = cpu->a;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			SET_HL(cpu, GET_HL(cpu) - 1);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x36:{ // LD HL, d8
-			unsigned char src = get_byte(cpu);
-			write_mem(cpu, GET_HL(cpu), src);
+			unsigned char src = get_byte(cpu, mem);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 12);
 			break;
 		}
@@ -523,7 +507,7 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x3E:{ // LD A, d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			cpu->a = src;
 			increment_timer(mem, 8);
 			break;
@@ -867,49 +851,49 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 
 		case 0x70:{ // LD HL, B
 			unsigned char src = cpu->b;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x71:{ // LD HL, C
 			unsigned char src = cpu->c;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x72:{ // LD HL, D
 			unsigned char src = cpu->d;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x73:{ // LD HL, E
 			unsigned char src = cpu->e;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x74:{ // LD HL, H
 			unsigned char src = cpu->h;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x75:{ // LD HL, L
 			unsigned char src = cpu->l;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x77:{ // LD HL, A
 			unsigned char src = cpu->a;
-			write_mem(cpu, GET_HL(cpu), src);
+			write_mem(mem, GET_HL(cpu), src);
 			increment_timer(mem, 8);
 			break;
 		}
@@ -983,7 +967,6 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			increment_timer(mem, 8);
 			break;
 		}
-
 
 
     }

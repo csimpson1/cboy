@@ -55,7 +55,7 @@ class OpcodeGenerator:
         srcAction = codeParams['srcAction']
         
         if src == 'd8':
-            srcString += 'get_byte(cpu);\n'
+            srcString += 'get_byte(cpu, mem);\n'
         
         #registers need to be read from the cpu struct itself
         elif src in ['A','F','B','C','D','E','H','L']:
@@ -90,7 +90,7 @@ class OpcodeGenerator:
             
         #Loading a value int a memory address
         elif tgt in ['BC', 'DE', 'HL']:
-            tgtString = f'write_mem(cpu, GET_{tgt}(cpu), src);\n'
+            tgtString = f'write_mem(mem, GET_{tgt}(cpu), src);\n'
             
         #Dealing with actions. Same case as for the src variable. We only need to use the 16b macro to increment 
         actionString = ""
