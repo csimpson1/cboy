@@ -10,7 +10,8 @@ create or replace table operation(
 create or replace table operand(
 	operand_id int auto_increment primary key,
 	operand_name char(10) not null,
-	size int not null
+	size int not null,
+	action char(1)
 );
 
 create or replace table opcode(
@@ -27,7 +28,8 @@ create or replace table instruction(
 	opcode_id int not null,
 	operand_id int,
 	op_order int,
-	op_immediate bool
+	op_immediate bool,
+	op_action char(1)
 );
 
 create or replace view opcodes_v
@@ -44,6 +46,7 @@ select
 	op.carry_flag, 
 	opa.operand_name,
 	opa.`size`,
+	i.op_action,
 	i.op_order, 
 	i.op_immediate 
 from instruction i
