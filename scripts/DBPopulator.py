@@ -78,7 +78,18 @@ class DBPopulater:
                 
                     else:
                         bytes = 0
-                        
+                    
+                    # Dealing with special actions on operands    
+                    """
+                    action = ""
+                    
+                    if 'increment' in operand:
+                        action = "+"
+                    
+                    elif 'decrement' in operand:
+                        action = "-"
+                    
+                    """
                     
                     row = (name, bytes)
                 
@@ -152,6 +163,7 @@ class DBPopulater:
                 codesToInsert.append(values)
         
         print('done getting opcodes')
+        #DEBUG
         print('inserting opcodes into opcode table')
         self.cur.executemany("insert into opcode (code, operation_id, bytes, cycles, conditional_cycles) values (?,?,?,?,?)", codesToInsert)
         self.conn.commit()
@@ -203,7 +215,7 @@ class DBPopulater:
                 
                 
                 if not self.opcodes[type][code]['operands']:
-                    instructionsToInsert.append((opcodeId, None, None, None))
+                    instructionsToInsert.append((opcodeId, None, None, None, None))
                     
                 else:
                     operandCounter = 1
@@ -227,12 +239,24 @@ class DBPopulater:
                             operandId = results[0][0]
                             immediate = operand['immediate']
                             
-                        instructionsToInsert.append((opcodeId, operandId, operandCounter, immediate))
+                            #Handling the case when there is an additional action to perform on an operand
+                            #such as incrementing it after it is accessed
+                            action = None
+                            
+                            if 'increment' in operand:
+                                action = '+'
+                            
+                            elif 'decrement' in operand:
+                                action = '-'
+                                
+                            
+                            
+                        instructionsToInsert.append((opcodeId, operandId, operandCounter, immediate, action))
                         operandCounter += 1    
                 
         print('done getting instruction linking')
         print('inserting into instruction table')
-        self.cur.executemany('insert into instruction (opcode_id, operand_id, op_order, op_immediate) values (?, ?, ?, ?)', instructionsToInsert)
+        self.cur.executemany('insert into instruction (opcode_id, operand_id, op_order, op_immediate, op_action) values (?, ?, ?, ?, ?)', instructionsToInsert)
         self.conn.commit()
         print('done inserting')
                         
@@ -247,6 +271,7 @@ class DBPopulater:
 
 if __name__ == '__main__':
     codes = DBPopulater()
+    #DEBUG
     codes.cleanup()
     codes.get_operations()
     codes.get_operands()

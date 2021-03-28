@@ -9,13 +9,13 @@ create or replace table operation(
 	
 create or replace table operand(
 	operand_id int auto_increment primary key,
-	name char(10) not null,
+	operand_name char(10) not null,
 	size int not null
 );
 
 create or replace table opcode(
 	opcode_id int auto_increment primary key,
-	name char(6) not null,
+	code char(6) not null,
 	operation_id int not null,
 	bytes int not null,
 	cycles int not null,
@@ -23,21 +23,32 @@ create or replace table opcode(
 );
 
 create or replace table instruction(
-	opcode_id int primary key,
-	operand_id int not null,
-	op_order int not null,
-	op_immediate bool not null
+	instruction_id int auto_increment primary key,
+	opcode_id int not null,
+	operand_id int,
+	op_order int,
+	op_immediate bool
 );
 
-select * from operation;
-select * from operand;
+create or replace view opcodes_v
+as
+select 
+	o.code, 
+	op.mnemonic, 
+	o.bytes, 
+	o.cycles, 
+	o.conditional_cycles,  
+	op.zero_flag, 
+	op.subtract_flag, 
+	op.half_carry_flag,
+	op.carry_flag, 
+	opa.operand_name,
+	opa.`size`,
+	i.op_order, 
+	i.op_immediate 
+from instruction i
+left join opcode o on i.opcode_id = o.opcode_id
+left join operation op on op.operation_id  = o.operation_id 
+left join operand opa on i.operand_id = opa.operand_id
+order by i.instruction_id, i.op_order; 
 
-select count(1) as operation_count, mnemonic
-from operation
-group by mnemonic
-having operation_count > 1;
-
-
-
-select * from operation;
-select * from opcode;
