@@ -968,7 +968,403 @@ void interpret_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
 }
 
 void interpret_extended_opcode(CPU *cpu, unsigned char *mem, unsigned char opcode){
+    switch(opcode){
+        /*********************
+         Set Bit Instructions
+        **********************/
+		case 0xC0:{ //0xC0 0 B
+			set_bit_char(&(cpu->b), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
 
+		case 0xC1:{ //0xC1 0 C
+			set_bit_char(&(cpu->c), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC2:{ //0xC2 0 D
+			set_bit_char(&(cpu->d), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC3:{ //0xC3 0 E
+			set_bit_char(&(cpu->e), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC4:{ //0xC4 0 H
+			set_bit_char(&(cpu->h), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC5:{ //0xC5 0 L
+			set_bit_char(&(cpu->l), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC6:{ //0xC6 0 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 0, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xC7:{ //0xC7 0 A
+			set_bit_char(&(cpu->a), 0, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC8:{ //0xC8 1 B
+			set_bit_char(&(cpu->b), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xC9:{ //0xC9 1 C
+			set_bit_char(&(cpu->c), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xCA:{ //0xCA 1 D
+			set_bit_char(&(cpu->d), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xCB:{ //0xCB 1 E
+			set_bit_char(&(cpu->e), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xCC:{ //0xCC 1 H
+			set_bit_char(&(cpu->h), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xCD:{ //0xCD 1 L
+			set_bit_char(&(cpu->l), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xCE:{ //0xCE 1 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 1, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xCF:{ //0xCF 1 A
+			set_bit_char(&(cpu->a), 1, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD0:{ //0xD0 2 B
+			set_bit_char(&(cpu->b), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD1:{ //0xD1 2 C
+			set_bit_char(&(cpu->c), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD2:{ //0xD2 2 D
+			set_bit_char(&(cpu->d), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD3:{ //0xD3 2 E
+			set_bit_char(&(cpu->e), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD4:{ //0xD4 2 H
+			set_bit_char(&(cpu->h), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD5:{ //0xD5 2 L
+			set_bit_char(&(cpu->l), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD6:{ //0xD6 2 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 2, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xD7:{ //0xD7 2 A
+			set_bit_char(&(cpu->a), 2, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD8:{ //0xD8 3 B
+			set_bit_char(&(cpu->b), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xD9:{ //0xD9 3 C
+			set_bit_char(&(cpu->c), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xDA:{ //0xDA 3 D
+			set_bit_char(&(cpu->d), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xDB:{ //0xDB 3 E
+			set_bit_char(&(cpu->e), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xDC:{ //0xDC 3 H
+			set_bit_char(&(cpu->h), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xDD:{ //0xDD 3 L
+			set_bit_char(&(cpu->l), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xDE:{ //0xDE 3 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 3, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xDF:{ //0xDF 3 A
+			set_bit_char(&(cpu->a), 3, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE0:{ //0xE0 4 B
+			set_bit_char(&(cpu->b), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE1:{ //0xE1 4 C
+			set_bit_char(&(cpu->c), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE2:{ //0xE2 4 D
+			set_bit_char(&(cpu->d), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE3:{ //0xE3 4 E
+			set_bit_char(&(cpu->e), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE4:{ //0xE4 4 H
+			set_bit_char(&(cpu->h), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE5:{ //0xE5 4 L
+			set_bit_char(&(cpu->l), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE6:{ //0xE6 4 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 4, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xE7:{ //0xE7 4 A
+			set_bit_char(&(cpu->a), 4, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE8:{ //0xE8 5 B
+			set_bit_char(&(cpu->b), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE9:{ //0xE9 5 C
+			set_bit_char(&(cpu->c), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xEA:{ //0xEA 5 D
+			set_bit_char(&(cpu->d), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xEB:{ //0xEB 5 E
+			set_bit_char(&(cpu->e), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xEC:{ //0xEC 5 H
+			set_bit_char(&(cpu->h), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xED:{ //0xED 5 L
+			set_bit_char(&(cpu->l), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xEE:{ //0xEE 5 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 5, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xEF:{ //0xEF 5 A
+			set_bit_char(&(cpu->a), 5, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF0:{ //0xF0 6 B
+			set_bit_char(&(cpu->b), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF1:{ //0xF1 6 C
+			set_bit_char(&(cpu->c), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF2:{ //0xF2 6 D
+			set_bit_char(&(cpu->d), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF3:{ //0xF3 6 E
+			set_bit_char(&(cpu->e), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF4:{ //0xF4 6 H
+			set_bit_char(&(cpu->h), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF5:{ //0xF5 6 L
+			set_bit_char(&(cpu->l), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF6:{ //0xF6 6 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 6, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xF7:{ //0xF7 6 A
+			set_bit_char(&(cpu->a), 6, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF8:{ //0xF8 7 B
+			set_bit_char(&(cpu->b), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xF9:{ //0xF9 7 C
+			set_bit_char(&(cpu->c), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xFA:{ //0xFA 7 D
+			set_bit_char(&(cpu->d), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xFB:{ //0xFB 7 E
+			set_bit_char(&(cpu->e), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xFC:{ //0xFC 7 H
+			set_bit_char(&(cpu->h), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xFD:{ //0xFD 7 L
+			set_bit_char(&(cpu->l), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xFE:{ //0xFE 7 HL
+			unsigned char addr = read_mem(mem, GET_HL(cpu));
+			set_bit_char(&addr, 7, 1);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xFF:{ //0xFF 7 A
+			set_bit_char(&(cpu->a), 7, 1);
+			increment_timer(mem, 8);
+			break;
+		}
+
+    }
 }
 
 
