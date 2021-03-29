@@ -9,6 +9,29 @@ class OpcodeGenerator:
     def __init__(self):
         self.cur = self.connect()
         self.indentLevel = 0;
+        
+        self.queries = {
+                        'mnemonicQuery' : """
+                                            select distinct code,cycles 
+                                            from opcodes_v 
+                                            where mnemonic=?; 
+                                            """,
+                        'operandQuery' : """
+                                            select 
+                                            operand_name,
+                                            op_immediate,
+                                            op_action
+                                            from opcodes_v
+                                            where code =?
+                                            and op_order =?;
+                                            """
+                        }
+        
+        self.case_builder={
+                            'SET' : self._build_case_set
+                            }
+        
+        
     
     def connect(self):
         try:
@@ -100,9 +123,55 @@ class OpcodeGenerator:
         #action string is already properly indented, so we just need to add an indent to the start of the string
         return self.indent_string(tgtString + actionString)
         
+    def create_cases(self, mnemonic, indentLevel = 2):
+        """
+        Creates the case statements for a given mnemonic.
+        """
+        self.indentLevel = indentLevel
+        #If the file already exists, clean it up.
+        fName = f'{mnemonic}_cases.txt'
+        self.cleanup(fName)
         
+        #Execute the query that corresponds to this mnemonic
+        self.cur.execute(self.queries['mnemonicQuery'], (mnemonic,))
+        results = self.cur.fetchall()
+        
+        for row in results:
+            code = row[0]
+            cycles = row[1]
             
+            #TODO: How should this be handled in cases where there's not 2 operands?
+            self.cur.execute(self.queries['operandQuery'], (code, 1))
+            tgt = self.cur.fetchone()
+            self.cur.execute(self.queries['operandQuery'], (code, 2))
+            src = self.cur.fetchone()
+            
+            
+            #prefixed opcodes will be dealt with in a separate function, it's assumed we've already ready the first CB byte
+            #so strip it
+            if '0xCB' in code:
+                code = code[0:2] + code[4:]
+            
+            #Call the function that will build the case statement for this particular operation
+            with open(fName, 'a') as f:
+                print(f'Creating case for {code} {tgt[0]} {src[0]}')
+                f.write(self.indent_string(f"case {code}:{{ //{code} {tgt[0]} {src[0]}\n"))
+                #Inside the case staetment so indent
+                self.indentLevel += 1
+                
+                #write whatever the case statement has determined will be the code in this particular instance
+                caseStr = self.case_builder[mnemonic](tgt, src)
+                f.write(caseStr)
+                
+                #Update the cycles, break out and close the case
+                f.write(self.indent_string(f'increment_timer(mem, {cycles});\n'))
+                f.write(self.indent_string('break;\n'))
+                
+                #closing case statement
+                self.indentLevel -= 1
+                f.write(self.indent_string("}\n\n"))
         
+                
     def create_8b_load_cases(self, fName):
         """
         Creates case statements for 8 bit load operations.
@@ -169,8 +238,8 @@ class OpcodeGenerator:
                 }
             
             with open(fName, 'a') as f:
-                print(f'Creating case for {code} {codeParams["src"]} {codeParams["tgt"]}')
-                f.write(self.indent_string(f"case {code}:{{ // LD {codeParams['tgt']}, {codeParams['src']}\n"))
+                print(f'Creating case for {code} {tgt[0]} {src[0]}')
+                f.write(self.indent_string(f"case {code}:{{ // {code} {tgt[0]} {src[0]}\n"))
                 
                 self.indentLevel += 1
                 f.write(self.get_ld_src(codeParams))
@@ -183,14 +252,87 @@ class OpcodeGenerator:
         
         print("Done writing 8b LD cases")
 
+    
+    def _build_case_set(self, tgt, src):
+        """
+        The set functions are taking a bit of some register, and setting it to 1. The first 'operand' (not really passed as one, but represented as
+        such in the dataset) is the bit, the second is the register. There's two main patterns
+        
+        bit -> register
+        bit -> memory location
+
+        """
+        
+        bit = tgt[0]
+        reg = src[0]
+        
+        
+        case = ""
+        
+        if reg in ['A','F','B','C','D','E','H','L']:
+            case = self.indent_string(f"set_bit_char(&(cpu->{reg.lower()}), {bit}, 1);\n")
+            
+        elif reg == "HL":
+            command1 = self.indent_string("unsigned char addr = read_mem(mem, GET_HL(cpu));\n")
+            command2 = self.indent_string(f'set_bit_char(&addr, {bit}, 1);\n')
+            case = command1 + command2
+        
+        else:
+            print("Unhandled case for SET operand")
+            print(tgt)
+            print(src)
+            sys.exit(-11)
+        
+        return case
+            
+        
                 
+    def create_set_cases(self, fName):
+        """
+        The set functions are taking a bit of some register, and setting it to 1. The first 'operand' (not really passed as one, but represented as
+        such in the dataset) is the bit, the second is the register. There's two main patterns
+        
+        bit -> register
+        bit -> memory location
+
+        """
+        
+        codeQuery = """
+                    select distinct code,cycles 
+                    from opcodes_v 
+                    where mnemonic='SET';
+                    """
                 
+        operandQuery = """
+                        select * from opcodes_v
+                        where code=?
+                        and op_order=?;
+                        """
+        
+        self.indentLevel = 2
+        
+        self.cur.execute(codeQuery)
+        results = self.cur.fetchall()
+        
+        for row in results:
+            code = row[0]
+            cycles = row[1]
+            
+            self.cur.execute(operandQuery, (code, 1))
+            tgt = self.cur.fetchone()
+            self.cur.execute(operandQuery, (code, 2))
+            src = self.cur.fetchone()
+        
+        
+    
+    def create_reset_cases(self, fName):
+        pass           
             
             
             
 if __name__ == '__main__':
     g = OpcodeGenerator()
-    fName = 'ld_cases.txt'
     
-    g.cleanup(fName)
-    g.create_8b_load_cases(fName)
+    
+    g.create_cases('SET')
+    
