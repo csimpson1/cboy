@@ -1,4 +1,5 @@
 from collections import Counter as count
+from functools import partial
 import json
 import mariadb
 import os
@@ -12,7 +13,7 @@ class OpcodeGenerator:
         
         self.queries = {
                         'mnemonicQuery' : """
-                                            select distinct code,cycles 
+                                            select distinct code,cycles,bytes 
                                             from opcodes_v 
                                             where mnemonic=?; 
                                             """,
@@ -26,9 +27,16 @@ class OpcodeGenerator:
                                             and op_order =?;
                                             """
                         }
-        
+        """
+        Given a mnemonic, define how you want to create the cases for that mnemomic.
+        The mnemonic here will also be used in the output filename for the cases
+        """
         self.case_builder={
-                            'SET' : self._build_case_set
+                            #Set and reset are basically the same, with a change in the value. 
+                            #Using partial evaluation to save some code
+                            'SET' : partial(self._build_case_set_reset, 1),
+                            'RES' : partial(self._build_case_set_reset, 0),
+                            'LD'  : self._build_case_ld
                             }
         
         
@@ -139,6 +147,7 @@ class OpcodeGenerator:
         for row in results:
             code = row[0]
             cycles = row[1]
+            bytes = row[2]
             
             #TODO: How should this be handled in cases where there's not 2 operands?
             self.cur.execute(self.queries['operandQuery'], (code, 1))
@@ -154,22 +163,35 @@ class OpcodeGenerator:
             
             #Call the function that will build the case statement for this particular operation
             with open(fName, 'a') as f:
-                print(f'Creating case for {code} {tgt[0]} {src[0]}')
-                f.write(self.indent_string(f"case {code}:{{ //{code} {tgt[0]} {src[0]}\n"))
-                #Inside the case staetment so indent
+                
+                #First see if we can generate a case for this code. 
+                #Need to increment and decrement the indent level so we match that of the inside of the case
+                
                 self.indentLevel += 1
-                
-                #write whatever the case statement has determined will be the code in this particular instance
-                caseStr = self.case_builder[mnemonic](tgt, src)
-                f.write(caseStr)
-                
-                #Update the cycles, break out and close the case
-                f.write(self.indent_string(f'increment_timer(mem, {cycles});\n'))
-                f.write(self.indent_string('break;\n'))
-                
-                #closing case statement
+                caseStr = self.case_builder[mnemonic](tgt, src, bytes)
                 self.indentLevel -= 1
-                f.write(self.indent_string("}\n\n"))
+                
+                if caseStr:
+                
+                    print(f'Creating case for {code} {tgt[0]} {src[0]}')
+                    f.write(self.indent_string(f"case {code}:{{ //{code} {tgt[0]} {src[0]}\n"))
+                    #Inside the case staetment so indent
+                    
+                    
+                    #write whatever the case statement has determined will be the code in this particular instance
+                    #Case statement should be properly indented if it exists
+                    f.write(caseStr)
+                    self.indentLevel += 1
+                    #Update the cycles, break out and close the case
+                    f.write(self.indent_string(f'increment_timer(mem, {cycles});\n'))
+                    f.write(self.indent_string('break;\n'))
+                    
+                    #closing case statement
+                    self.indentLevel -= 1
+                    f.write(self.indent_string("}\n\n"))
+                
+                else:
+                    print(f'Skipping case {code} as nothing returned by case builder function')
         
                 
     def create_8b_load_cases(self, fName):
@@ -178,7 +200,10 @@ class OpcodeGenerator:
         
         These operations follow a simple pattern. The first operand is 
         the target location for the load operation, and the second is the source.
-        There's four forms that a load operation can take (SRC -> TGT)
+        There's four forms that a load operation can take if we restrict to operations
+        that affect the 8b registers
+        
+         (SRC -> TGT)
         
         1) REG  -> REG
         2) IMM  -> REG
@@ -190,6 +215,7 @@ class OpcodeGenerator:
         
         There are specific cases where there is an action taken on one of the operands as well
         such as incrementing or decrementing 
+        
         """
         #Would be nice if the data model had a view we could use for this instead of parsing the data in mem
         codeQuery = """select 
@@ -251,11 +277,209 @@ class OpcodeGenerator:
                 f.write(self.indent_string("}\n\n"))
         
         print("Done writing 8b LD cases")
-
     
-    def _build_case_set(self, tgt, src):
+    def _build_case_ld(self, tgt, src, bytes):
+        if bytes < 3:
+            return self._build_case_ld_8b(tgt, src)
+        
+        else:
+            return self._build_case_ld_16b(tgt, src)
+    
+    def _build_case_ld_8b(self, tgt, src):
         """
-        The set functions are taking a bit of some register, and setting it to 1. The first 'operand' (not really passed as one, but represented as
+        Creates case statements for 8 bit load operations.
+        
+        These operations follow a simple pattern. The first operand is 
+        the target location for the load operation, and the second is the source.
+        There's four forms that a load operation can take (SRC -> TGT)
+        
+        1) REG  -> REG
+        2) IMM  -> REG
+        3) ADDR -> REG
+        4) REG  -> ADDR
+        
+        For each of the SRC and TGT types, these are then handled using c code 
+        specific to the implementation of the emulator
+        
+        There are specific cases where there is an action taken on one of the operands as well
+        such as incrementing or decrementing 
+        
+        """
+        
+        
+        #TODO: need to handle the special case of 0xF8,
+        # where a signed operation is handled
+        if tgt[0] == 'SP' or src[0] == 'SP':
+            print("Skipping case  for now")
+            return
+        
+    
+        
+        """
+        Start by determining how to access the src operand.
+        """
+        
+        srcString = ""
+       
+        
+        srcName = src[0]
+        
+        #TODO: Maybe instead of calling indent string, we can store all the strings in a list, and then just run a map command, and join it into the final string?
+         #8b immediate data is read from the stream
+        if srcName == 'd8':
+            srcString += self.indent_string('unsigned char src = get_byte(cpu, mem);\n')
+        
+        #8b registers need to be read from the cpu struct itself
+        elif srcName in ['A','F','B','C','D','E','H','L']:
+            srcString += self.indent_string(f'unsigned char src =  cpu->{srcName.lower()};\n')
+        
+        #addresses are stored in one of 3 registers, and need to be accessed using the memory module    
+        elif srcName in ['BC', 'DE', 'HL']:
+            srcString += self.indent_string(f'unsigned char src =  read_mem(mem, GET_{srcName}(cpu));\n')
+        
+        
+        else:
+            print("Error determining code for source variable")
+            print(src)
+            sys.exit(-1)
+
+                    
+        
+        #Dealing with actions. Custom actions are only taken on the 16b registers, so 
+        #we only need to consider actions on them
+        srcAction = src[2]
+        srcActionString = ""
+        if srcAction:
+            srcActionString = self.indent_string(f'SET_{srcName}(cpu,src {srcAction} 1);\n')
+        
+        srcString = srcString + srcActionString
+        
+        """
+        Check how to store the source operand into the target operand
+        """
+        
+        tgtName = tgt[0]
+        
+        
+        #If the target is a register, we need to acceess it via the cpu struct
+        if tgtName in ['A','F','B','C','D','E','H','L']:
+            tgtString = f'cpu->{tgtName.lower()} = src;\n'
+            
+        #If the target is a mem address, the write_mem function needs to be used
+        elif tgtName in ['BC', 'DE', 'HL']:
+            tgtString = f'write_mem(mem, GET_{tgtName}(cpu), src);\n'
+            
+        else:
+            print("Error determining code for target variable")
+            print(tgt)
+            sys.exit(-1)
+            
+        
+        #Dealing with actions. Same case as for the src variable. We only need to use the 16b macro to increment 
+        tgtAction = tgt[2]
+        tgtActionString = ""
+        if tgtAction:
+            tgtActionString = self.indent_string(f'SET_{tgtName}(cpu, GET_{tgtName}(cpu) {tgtAction} 1);\n')
+        
+        #action string is already properly indented, so we just need to add an indent to the start of the string
+        tgtString = self.indent_string(tgtString + tgtActionString)
+        
+        #Smash everything together and return
+        return srcString + tgtString
+        
+    def _build_case_ld_16b(self, tgt, src):
+        """
+        In the case of 16b registers, we have the following forms
+        
+        (SRC -> TGT)
+        
+        1) IMM -> REG
+        2) SP -> ADDR, ADDR + 0x1
+        3) A -> ADDR
+        4) ADDR -> A 
+        
+        Explanations:
+        
+        1) Take the two bytes of data following the opcode, combine into a short,
+        and load this into whatever target is specified
+        
+        2 Split the SP into high and low bytes. Get the next two bytes following 
+        the opcode, and combine into a short. This is the address of where to 
+        store the low byte of SP. The high byte will be stored at 0x(ADDR) + 1
+        
+        3) Get the next two bytes after the operand, and combine into a short. 
+        Store the contents of the accumulator register at this address
+        
+        4) Get the next two bytes after the operand, and combine into a short. 
+        Store the contents of this memory address into the accumulator
+        
+        """
+        
+        case = []
+        srcName = src[0]
+        
+        #16b immediate data needs to be read from the stream one byte at a time
+        if srcName == 'd16':
+            case.append('unsigned char srcLowByte =  get_byte(cpu, mem);\n')
+            case.append('unsigned char srcHighByte = get_byte(cpu, mem);\n')
+            case.append('unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);\n')
+           
+        #16b address data also needs to be read one byte at a time    
+        elif srcName == 'a16':
+            case.append('unsigned char srcLowByte =  get_byte(cpu, mem);\n')
+            case.append('unsigned char srcHighByte = get_byte(cpu, mem);\n')
+            case.append('unsigned short address = _get_8b_to_16b(&srcHighByte, &srcLowByte);\n')
+            case.append('unsigned short src = read_mem(mem, address);\n')
+        #Really only used for one opcode, 0x08 which is a bit of a special case    
+        elif srcName =='SP':
+            case.append('unsigned char spLowByte = get_low_byte &(cpu -> sp);\n')
+            case.append('unsigned char spHighByte = get_high_byte(&(cpu -> sp);\n')
+        
+        elif srcName == 'A':
+            case.append('unsigned char src = cpu -> a;\n')
+        
+        else:
+            print("Error determining code for source variable")
+            print(src)
+            sys.exit(-1)
+            
+        #No actions are needed for these loads, so we skip this part
+        
+        tgtName = tgt[0]
+        #Need to use the SET macro to properly set the 16b register representations
+        if tgtName in ['BC', 'DE', 'HL', 'SP']:
+            case.append(f'SET_{tgtName}(cpu, src);\n')
+        
+        #If the target is memory, we need to assemble the address    
+        elif tgtName == 'a16':
+            case.append('unsigned char addrLow = get_byte(cpu, mem);\n')
+            case.append('unsigned char addrHigh = get_byte(cpu, mem);\n')
+            case.append('unsigned short addr = _get_8b_to_16b(&addrLow, &addrHigh);\n')
+            
+            #0x08 needs to be handled differently than other cases where the target is memory
+            if srcName == 'SP':
+                case.append('writemem(mem, addr, spLowByte);\n')
+                case.append('writemem(mem, addr + 0x1, spHighByte);\n')
+                
+            else:
+                case.append('writemem(mem, addr, src;\n')
+        
+        elif tgtName == 'A':
+            case.append("cpu -> a = src;\n")
+            
+            
+        else:
+            print("Error determining code for target variable")
+            print(tgt)
+            sys.exit(-1)
+        
+        #Indent the lines of code in the case statement, and join them together into a single string    
+        caseIndented = map(self.indent_string, case)
+        return "".join(caseIndented)
+    
+    def _build_case_set_reset(self, val, tgt, src, cycles):
+        """
+        The set/ reset functions are taking a bit of some register, and setting it to 1 or 0. The first 'operand' (not really passed as one, but represented as
         such in the dataset) is the bit, the second is the register. There's two main patterns
         
         bit -> register
@@ -274,7 +498,7 @@ class OpcodeGenerator:
             
         elif reg == "HL":
             command1 = self.indent_string("unsigned char addr = read_mem(mem, GET_HL(cpu));\n")
-            command2 = self.indent_string(f'set_bit_char(&addr, {bit}, 1);\n')
+            command2 = self.indent_string(f'set_bit_char(&addr, {bit}, {val});\n')
             case = command1 + command2
         
         else:
@@ -285,48 +509,7 @@ class OpcodeGenerator:
         
         return case
             
-        
-                
-    def create_set_cases(self, fName):
-        """
-        The set functions are taking a bit of some register, and setting it to 1. The first 'operand' (not really passed as one, but represented as
-        such in the dataset) is the bit, the second is the register. There's two main patterns
-        
-        bit -> register
-        bit -> memory location
-
-        """
-        
-        codeQuery = """
-                    select distinct code,cycles 
-                    from opcodes_v 
-                    where mnemonic='SET';
-                    """
-                
-        operandQuery = """
-                        select * from opcodes_v
-                        where code=?
-                        and op_order=?;
-                        """
-        
-        self.indentLevel = 2
-        
-        self.cur.execute(codeQuery)
-        results = self.cur.fetchall()
-        
-        for row in results:
-            code = row[0]
-            cycles = row[1]
-            
-            self.cur.execute(operandQuery, (code, 1))
-            tgt = self.cur.fetchone()
-            self.cur.execute(operandQuery, (code, 2))
-            src = self.cur.fetchone()
-        
-        
-    
-    def create_reset_cases(self, fName):
-        pass           
+                  
             
             
             
@@ -335,4 +518,6 @@ if __name__ == '__main__':
     
     
     g.create_cases('SET')
+    g.create_cases('RES')
+    g.create_cases('LD')
     

@@ -7,6 +7,7 @@ import re
 import requests
 import sys
 
+
 class ReportCreator:
     
     def __init__(self):
@@ -47,6 +48,16 @@ class ReportCreator:
         #return [x[0] for x in self.cur.fetchall()]
         return self.cur.fetchall()
         
+    
+    def _find_case_function(self, functionPattern):
+        """
+        Take in a pattern, and give a function which takes a string as an argument and
+        returns true if the
+        """
+        return lambda line: functionPattern.findall(line) != []
+        
+        
+        
         
     def find_implemented_opcodes(self, functionPattern):
         """
@@ -77,7 +88,9 @@ class ReportCreator:
         #find the line where the function starts
         with open(fPath, 'r') as f:
             
+
             testPattern = re.compile(functionPattern)
+            
             for (i, line) in enumerate(f):
                 results = testPattern.findall(line)
                 if results:
@@ -101,10 +114,10 @@ class ReportCreator:
                 functionEnd = functionStart + i
                 break;
         
-        p = re.compile('case (0x..)')
+        casePattern = re.compile('case (0x..)')
             
         for line in fLines[functionStart:functionEnd + 1]:
-            results = p.findall(line)
+            results = casePattern.findall(line)
             if results:
                 code = results[0]
                 if extended:
