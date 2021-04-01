@@ -37,17 +37,19 @@ class OpcodeGenerator:
                             'SET' : partial(self._build_case_set_reset, 1),
                             'RES' : partial(self._build_case_set_reset, 0),
                             'LD'  : self._build_case_ld,
-                            'BIT' : self._build_case_bit
+                            'BIT' : self._build_case_bit,
+                            'SWAP': self._build_case_swap
                             }
         
         """
         Strings to be used in the comments of each set of cases
         """
         self.descriptions={
-                            'SET': "Bit setting operations",
-                            'RES': "Bit Resetting operations",
-                            'LD' : "Load operations",
-                            'BIT': "Bit compliment operations" 
+                            'SET' : "Bit setting operations",
+                            'RES' : "Bit Resetting operations",
+                            'LD'  : "Load operations",
+                            'BIT' : "Bit compliment operations" ,
+                            'SWAP': "Swap nibble operations"
                             }
         
         
@@ -88,8 +90,29 @@ class OpcodeGenerator:
             print(f'No file {fName}, skipping cleanup')
             
 
+    def _build_case_swap(self, tgt, src, bytes):
+        tgtName = tgt[0]
+        case = []
         
-    
+        
+        if tgtName in ['A', 'B', 'C', 'D', 'E', 'H', 'L']:
+            case.append(f'unsigned char toSwap = cpu->{tgtName.lower()};\n')
+            case.append ('unsigned char swapped = swap_nibble(toSwap);\n')
+            case.append(f'cpu->{tgtName.lower()} = swapped;\n')
+        
+        elif tgtName =='HL':
+            case.append('unsigned char toSwap = read_mem(mem, GET_HL(cpu));\n')
+            case.append('unsigned char swapped = swap_nibble(toSwap);\n')
+            case.append('write_mem(mem, GET_HL(cpu), swapped;\n')
+        
+        else:
+            print('Error determining code for target variable')
+            print(tgt)
+            sys.exit(-1)
+        
+        case = map(self.indent_string, case)
+        
+        return "".join(case)
     def _build_case_bit(self, tgt, src, bytes):
         """
         Creates case statements for the BIT operation. This operation takes the compliment of a given bit from a register, and stores that value into the Z flag of the
@@ -463,8 +486,13 @@ class OpcodeGenerator:
 
             
             if caseStr:
-                print(f'Creating case for {code} {tgt[0]} {src[0]}')
-                lines.append(self.indent_string(f"case {code}:{{ //{mnemonic} {tgt[0]} {src[0]}\n"))
+                
+                #If there's no source or target we need to provide some value, so provide a null one
+                srcName = src[0] if src is not None else None
+                tgtName = tgt[0] if tgt is not None else None
+                
+                print(f'Creating case for {code} {tgtName} {srcName}')
+                lines.append(self.indent_string(f"case {code}:{{ //{mnemonic} {tgtName} {srcName}\n"))
                 #Inside the case staetment so indent
                 
                 
@@ -541,7 +569,7 @@ class OpcodeGenerator:
         Wrapper for the generic case builder. For the GB there are two main classes of opcodes,
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
-        self.generic_case_builder(['SET', 'RES', 'BIT'], prefixed=True)
+        self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
         self.generic_case_builder(['LD'])
                     
                 

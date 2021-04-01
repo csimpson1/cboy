@@ -129,22 +129,27 @@ class ReportCreator:
                 
     def output_summary_rpt(self, fName):
         
+        #Variables for the total row at the bottom of the sheet
+        totalOps = 0
+        totalImplemented = 0
+        
         summary = {}
         for (code,mnemonic) in self.total_opcodes:
-            #print(code)
-            #print(mnemonic)
             
             if mnemonic not in summary:
                 #Add the mnemonic in
                 summary[mnemonic] = {'total':1, 'implemented':0 }
+                totalOps += 1
                 
             else:
                 #We have seen the code so update the number of times we've seen it
                 summary[mnemonic]['total'] += 1
+                totalOps += 1
             
             #Now see if that particular opcode is in the lists of one found to be implemented. If so, add 1 to the count
             if code in self.implementedOpcodes:
                 summary[mnemonic]['implemented'] += 1
+                totalImplemented += 1
         
         with open(fName, 'w', newline='') as f:
             sReportWriter = csv.writer(f)
@@ -154,7 +159,13 @@ class ReportCreator:
                 print
                 sReportWriter.writerow([mnemonic, summary[mnemonic]['implemented'], summary[mnemonic]['total'], (summary[mnemonic]['implemented']/ summary[mnemonic]['total']) * 100 ])
                 
-        
+            
+            sReportWriter.writerow(["Grand Total", totalOps, totalImplemented, (totalImplemented/totalOps) * 100])
+            
+
+            
+
+                
                 
             
             
