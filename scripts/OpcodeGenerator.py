@@ -36,7 +36,18 @@ class OpcodeGenerator:
                             #Using partial evaluation to save some code
                             'SET' : partial(self._build_case_set_reset, 1),
                             'RES' : partial(self._build_case_set_reset, 0),
-                            'LD'  : self._build_case_ld
+                            'LD'  : self._build_case_ld,
+                            'BIT' : self._build_case_bit
+                            }
+        
+        """
+        Strings to be used in the comments of each set of cases
+        """
+        self.descriptions={
+                            'SET': "Bit setting operations",
+                            'RES': "Bit Resetting operations",
+                            'LD' : "Load operations",
+                            'BIT': "Bit compliment operations" 
                             }
         
         
@@ -76,209 +87,54 @@ class OpcodeGenerator:
         else:
             print(f'No file {fName}, skipping cleanup')
             
-            
+
+        
     
-    def get_ld_src(self, codeParams):
-        srcString = 'unsigned char src = '
+    def _build_case_bit(self, tgt, src, bytes):
+        """
+        Creates case statements for the BIT operation. This operation takes the compliment of a given bit from a register, and stores that value into the Z flag of the
+        cpu. The src registers can be any of the 8 bit registers in the CPU, or from the value of an address pointed to by the HL register
+        """
+        case = []
+        srcName = src[0]
+        tgtName = tgt[0]
         
-        #Immediate data is read from the stream
-        src = codeParams['src']
-        srcAction = codeParams['srcAction']
         
-        if src == 'd8':
-            srcString += 'get_byte(cpu, mem);\n'
+        #Get registers directly from the CPU
+        if srcName in ['A', 'B', 'C', 'D', 'E', 'H', 'L']:
+            case.append(f'unsigned char bit = get_bit((int) cpu -> {srcName.lower()}, {tgtName});\n')
         
-        #registers need to be read from the cpu struct itself
-        elif src in ['A','F','B','C','D','E','H','L']:
-            srcString += f'cpu->{src.lower()};\n'
-        
-        #addresses are stored in one of 3 registers, and need to be accessed using the memory module    
-        elif src in ['BC', 'DE', 'HL']:
-            srcString += f'read_mem(mem, GET_{src}(cpu));\n'
-        
+        #Memory addresses are read from mem    
+        elif srcName == 'HL':
+            case.append(f'unsigned char bit = get_bit((int) read_mem(cpu, GET_HL(CPU), {tgtName}));\n')
+            
         else:
-            print("Error determining code for source variable")
-            print(codeParams)
+            print('Error determining code for source variable')
+            print(src)
             sys.exit(-1)
             
+        #Just checking the tgt name, to make sure it is a valid bit position    
+        if tgtName in [f'{i}' for i in range(8)]:
+            pass
+        else:
+            print('Error determining code for target variable')
+            print(tgt)
+            sys.exit(-1)
         
-        #Dealing with actions. Custom actions are only taken on the 16b registers, so 
-        #we only need to consider actions on them
-        actionString = ""
-        if srcAction:
-            actionString = self.indent_string(f'SET_{src}(cpu,src {srcAction} 1);\n')
             
-        #Append the action string to the assignment string, and return it            
-        return self.indent_string(srcString + actionString)
-    
-    def get_ld_tgt(self, codeParams):
-        tgt = codeParams['tgt']
-        tgtAction = codeParams['tgtAction']
+            
+        case.append('unsigned char compliment = (bit == 0 : 1 : 0);\n')
+        case.append('SET_ZF(cpu, compliment);\n')
         
-        #Loading a value into a register
-        if tgt in ['A','F','B','C','D','E','H','L']:
-            tgtString = f'cpu->{tgt.lower()} = src;\n'
-            
-        #Loading a value int a memory address
-        elif tgt in ['BC', 'DE', 'HL']:
-            tgtString = f'write_mem(mem, GET_{tgt}(cpu), src);\n'
-            
-        #Dealing with actions. Same case as for the src variable. We only need to use the 16b macro to increment 
-        actionString = ""
-        if tgtAction:
-            actionString = self.indent_string(f'SET_{tgt}(cpu, GET_{tgt}(cpu) {tgtAction} 1);\n')
-        
-        #action string is already properly indented, so we just need to add an indent to the start of the string
-        return self.indent_string(tgtString + actionString)
-        
-    def create_cases(self, mnemonic, indentLevel = 2):
-        """
-        Creates the case statements for a given mnemonic.
-        """
-        self.indentLevel = indentLevel
-        #If the file already exists, clean it up.
-        fName = f'{mnemonic}_cases.txt'
-        self.cleanup(fName)
-        
-        #Execute the query that corresponds to this mnemonic
-        self.cur.execute(self.queries['mnemonicQuery'], (mnemonic,))
-        results = self.cur.fetchall()
-        
-        for row in results:
-            code = row[0]
-            cycles = row[1]
-            bytes = row[2]
-            
-            #TODO: How should this be handled in cases where there's not 2 operands?
-            self.cur.execute(self.queries['operandQuery'], (code, 1))
-            tgt = self.cur.fetchone()
-            self.cur.execute(self.queries['operandQuery'], (code, 2))
-            src = self.cur.fetchone()
-            
-            
-            #prefixed opcodes will be dealt with in a separate function, it's assumed we've already ready the first CB byte
-            #so strip it
-            if '0xCB' in code:
-                code = code[0:2] + code[4:]
-            
-            #Call the function that will build the case statement for this particular operation
-            with open(fName, 'a') as f:
-                
-                #First see if we can generate a case for this code. 
-                #Need to increment and decrement the indent level so we match that of the inside of the case
-                
-                self.indentLevel += 1
-                caseStr = self.case_builder[mnemonic](tgt, src, bytes)
-                self.indentLevel -= 1
-                
-                if caseStr:
-                
-                    print(f'Creating case for {code} {tgt[0]} {src[0]}')
-                    f.write(self.indent_string(f"case {code}:{{ //{code} {tgt[0]} {src[0]}\n"))
-                    #Inside the case staetment so indent
-                    
-                    
-                    #write whatever the case statement has determined will be the code in this particular instance
-                    #Case statement should be properly indented if it exists
-                    f.write(caseStr)
-                    self.indentLevel += 1
-                    #Update the cycles, break out and close the case
-                    f.write(self.indent_string(f'increment_timer(mem, {cycles});\n'))
-                    f.write(self.indent_string('break;\n'))
-                    
-                    #closing case statement
-                    self.indentLevel -= 1
-                    f.write(self.indent_string("}\n\n"))
-                
-                else:
-                    print(f'Skipping case {code} as nothing returned by case builder function')
+        caseIndented = map(self.indent_string, case)
+        return "".join(caseIndented)
         
                 
-    def create_8b_load_cases(self, fName):
-        """
-        Creates case statements for 8 bit load operations.
-        
-        These operations follow a simple pattern. The first operand is 
-        the target location for the load operation, and the second is the source.
-        There's four forms that a load operation can take if we restrict to operations
-        that affect the 8b registers
-        
-         (SRC -> TGT)
-        
-        1) REG  -> REG
-        2) IMM  -> REG
-        3) ADDR -> REG
-        4) REG  -> ADDR
-        
-        For each of the SRC and TGT types, these are then handled using c code 
-        specific to the implementation of the emulator
-        
-        There are specific cases where there is an action taken on one of the operands as well
-        such as incrementing or decrementing 
-        
-        """
-        #Would be nice if the data model had a view we could use for this instead of parsing the data in mem
-        codeQuery = """select 
-                    distinct code, cycles
-                    from opcodes_v
-                    where mnemonic='LD'
-                    and bytes < 3
-                    and code !='0xF8'
-                    and code != '0xF9'
-                    order by code, op_order ;
-                    """
-        operandQuery = """select 
-                        operand_name,
-                        op_immediate,
-                        op_action
-                        from opcodes_v
-                        where code =?
-                        and op_order =?;
-        """
-        #fName = 'ldCases.txt'
-        self.indentLevel = 2
-        
-        #Get all the distinct 8b load operations
-        self.cur.execute(codeQuery)
-        results = self.cur.fetchall()
-        
-        #construct a dict where each key has the info needed to build a case.
-        for row in results:
-            code = row[0]
-            cycles = row[1]
-            
-            self.cur.execute(operandQuery, (code, 1))
-            tgt = self.cur.fetchone()
-            self.cur.execute(operandQuery, (code, 2))
-            src = self.cur.fetchone()
-
-            
-            codeParams = {
-                    'src': src[0],
-                    'srcIm': src[1],
-                    'srcAction': src[2],
-                    'tgt': tgt[0],
-                    'tgtIm': tgt[1],
-                    'tgtAction': tgt[2],
-                    'cycles':cycles
-                }
-            
-            with open(fName, 'a') as f:
-                print(f'Creating case for {code} {tgt[0]} {src[0]}')
-                f.write(self.indent_string(f"case {code}:{{ // {code} {tgt[0]} {src[0]}\n"))
-                
-                self.indentLevel += 1
-                f.write(self.get_ld_src(codeParams))
-                f.write(self.get_ld_tgt(codeParams))
-                f.write(self.indent_string(f'increment_timer(mem, {cycles});\n'))
-                f.write(self.indent_string('break;\n'))
-                
-                self.indentLevel -= 1
-                f.write(self.indent_string("}\n\n"))
-        
-        print("Done writing 8b LD cases")
     
     def _build_case_ld(self, tgt, src, bytes):
+        """
+        Just a wrapper for the two other case builders, uses the size of the operation to decide what's what 
+        """
         if bytes < 3:
             return self._build_case_ld_8b(tgt, src)
         
@@ -477,7 +333,7 @@ class OpcodeGenerator:
         caseIndented = map(self.indent_string, case)
         return "".join(caseIndented)
     
-    def _build_case_set_reset(self, val, tgt, src, cycles):
+    def _build_case_set_reset(self, val, tgt, src, bytes):
         """
         The set/ reset functions are taking a bit of some register, and setting it to 1 or 0. The first 'operand' (not really passed as one, but represented as
         such in the dataset) is the bit, the second is the register. There's two main patterns
@@ -509,7 +365,191 @@ class OpcodeGenerator:
         
         return case
             
-                  
+    def create_cases(self, mnemonic, indentLevel = 2):
+        """
+        Creates the case statements for a given mnemonic. High level this consists of
+        
+        1) Running two queries to get information on all operations with a particular mnemonic
+        2) Creating a comment, outlining that we are starting a new section of cases
+        3) Creating the case statement. Every case statement has 
+            * A declaration case VAL {
+            
+            * Variable creations and assignments. This is deferred to a function specified 
+              by each mnemonic, which may wrap others depending on how complicated it is to implement
+              each mnenonic
+              
+            * A statement to increment the timer by some number of cycles
+            
+            * A break statement
+            
+            * A closing bracket
+            
+        Variable creation and assignment functions are found in self.case_builder. Descriptions for comments
+        are in self.descriptions.
+        
+        To implement a new case, you need to create a function that will build the variable creation and assignment statements
+        link this with the mnemonic in self.case_builder, create a description of the new cas linked with the mnemonic
+        in self.descriptions
+        
+        Some tricks
+        
+        The function reference in self.case_builder needs to have the following signature
+        
+        fn(self, [optional args], src, tgt, bytes)
+        where
+        [optional args]: Not optional in the traditional python sense. These are positional arguments that are evaluated at the time
+        the function is specified in the case_builder dict. 
+        
+        An example of this is the set/reset operations. These behave exactly the same, except for the value the bit is set to.
+        Instead of duplicating the functions, the bit is specified using partial function evaluation, and the appropriate evaluation
+        is specified for each mnemonic.
+        
+        src: A tuple consisting of operand_name, op_immediate, op_action of the source operand
+        
+        tgt: A tuple consisting of operand_name, op_immediate, op_action of the target operand
+        
+        bytes: the size of the operand in bytes
+
+        """
+        self.indentLevel = indentLevel
+        #If the file already exists, clean it up.
+        #fName = f'{mnemonic}_cases.txt'
+        #self.cleanup(fName)
+        
+        #Execute the query that corresponds to this mnemonic
+        self.cur.execute(self.queries['mnemonicQuery'], (mnemonic,))
+        results = self.cur.fetchall()
+        
+        lines = []
+        
+        #Creating the comment to append each section of cases:
+        comment = []
+        commentString = f'  {mnemonic}: {self.descriptions[mnemonic]}\n'
+        dots = "*" * (len(commentString) + 1)
+        
+        comment.append('/' + dots + '\n')
+        comment.append(commentString)
+        comment.append(dots +  '/' + '\n')
+        
+        lines += list(map(self.indent_string, comment))
+        
+        for row in results:
+            code = row[0]
+            cycles = row[1]
+            bytes = row[2]
+            
+            #TODO: How should this be handled in cases where there's not 2 operands?
+            self.cur.execute(self.queries['operandQuery'], (code, 1))
+            tgt = self.cur.fetchone()
+            self.cur.execute(self.queries['operandQuery'], (code, 2))
+            src = self.cur.fetchone()
+            
+            
+            #prefixed opcodes will be dealt with in a separate function, it's assumed we've already ready the first CB byte
+            #so strip it
+            if '0xCB' in code:
+                code = code[0:2] + code[4:]
+            
+            #Call the function that will build the case statement for this particular operation
+            #with open(fName, 'a') as f:
+            
+                
+            #First see if we can generate a case for this code. 
+            #Need to increment and decrement the indent level so we match that of the inside of the case
+                
+            self.indentLevel += 1
+            caseStr = self.case_builder[mnemonic](tgt, src, bytes)
+            self.indentLevel -= 1
+
+            
+            if caseStr:
+                print(f'Creating case for {code} {tgt[0]} {src[0]}')
+                lines.append(self.indent_string(f"case {code}:{{ //{mnemonic} {tgt[0]} {src[0]}\n"))
+                #Inside the case staetment so indent
+                
+                
+                #write whatever the case statement has determined will be the code in this particular instance
+                #Case statement should be properly indented if it exists
+                lines.append(caseStr)
+                self.indentLevel += 1
+                #Update the cycles, break out and close the case
+                lines.append(self.indent_string(f'increment_timer(mem, {cycles});\n'))
+                lines.append(self.indent_string('break;\n'))
+                
+                #closing case statement
+                self.indentLevel -= 1
+                lines.append(self.indent_string("}\n\n"))
+                
+                
+            else:
+                print(f'Skipping case {code} as nothing returned by case builder function')
+                
+        return lines
+    
+    def generic_case_builder(self, operations, prefixed=False):
+        """
+        This function creates a header file and a c file which will contain all of the case statements which we
+        have defined for the class of operands specified.  This function handles boilerplate creation, and then defers
+        creation of the actual cases to the create_cases function
+        """
+        
+        #File name decisions
+        modifier = '' if not prefixed else 'prefixed_'
+        fName = f'{modifier}opcodes.c'
+        headerName = f'{modifier}opcodes.h'
+        
+        self.cleanup(headerName)
+        
+        #Write the header file
+        with open(headerName, 'w') as h:
+            h.write(f'void interpret_{modifier}opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode);\n')
+        
+        self.cleanup(fName)
+            
+        #Build the c file containing the function
+        with open(fName, 'w') as f:
+            
+            self.indentLevel = 0
+            lines = []
+    
+            lines.append(self.indent_string(f'void interpret_{modifier}opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){{\n'))
+            
+            self.indentLevel = 1
+            
+            lines.append(self.indent_string('switch(opcode){\n'))
+            
+            self.indentLevel = 2
+            
+            
+            for mnemonic in operations:
+
+                lines += self.create_cases(mnemonic)
+                
+                #print(lines)
+            
+
+            self.indentLevel = 1
+            lines.append(self.indent_string('}\n'))
+            
+            self.indentLevel = 0
+            lines.append(self.indent_string('}\n'))
+            f.write("".join(lines))
+            
+    
+    def build_case_files(self):
+        """
+        Wrapper for the generic case builder. For the GB there are two main classes of opcodes,
+        prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
+        """
+        self.generic_case_builder(['SET', 'RES', 'BIT'], prefixed=True)
+        self.generic_case_builder(['LD'])
+                    
+                
+            
+            
+            
+        
+        
             
             
             
@@ -517,7 +557,5 @@ if __name__ == '__main__':
     g = OpcodeGenerator()
     
     
-    g.create_cases('SET')
-    g.create_cases('RES')
-    g.create_cases('LD')
+    g.build_case_files()
     

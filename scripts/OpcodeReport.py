@@ -13,8 +13,8 @@ class ReportCreator:
     def __init__(self):
         self.cur = self.connect()
         self.implementedOpcodes = []
-        self.find_implemented_opcodes(r'void interpret_opcode')
-        self.find_implemented_opcodes(r'void interpret_extended_opcode')
+        self.find_implemented_opcodes(r'void interpret_opcode', 'opcodes.c')
+        self.find_implemented_opcodes(r'void interpret_prefixed_opcode', 'prefixed_opcodes.c')
         
         
         self.total_opcodes = self.find_all_opcodes()
@@ -47,46 +47,31 @@ class ReportCreator:
         self.cur.execute(query)
         #return [x[0] for x in self.cur.fetchall()]
         return self.cur.fetchall()
-        
-    
-    def _find_case_function(self, functionPattern):
-        """
-        Take in a pattern, and give a function which takes a string as an argument and
-        returns true if the
-        """
-        return lambda line: functionPattern.findall(line) != []
+                
         
         
-        
-        
-    def find_implemented_opcodes(self, functionPattern):
+    def find_implemented_opcodes(self, functionPattern, fName):
         """
         Update this object's list of opcodes with those that were implemented in a particular function, specified by functionPattern
         """
         
-        #Get the path to the cpu.c file. This assumes that we have the following directory structure
-        """
-        
-        base - src - cpu.c
-            \
-             - scripts - OpcodeReport.py
-        """
-        
-        currentDir = os.path.dirname(__file__)
-        parentDir = os.path.split(currentDir)[0]
+   
+        #currentDir = os.path.dirname(__file__)
+        #parentDir = os.path.split(currentDir)[0]
         
         
-        fPath = os.path.join(parentDir, 'src', 'cpu.c')
+        #fPath = os.path.join(parentDir, 'src', fName)
+        
         
         #Pattern used to identify cases
         
         cases = []
         functionStart = None
         fLines = None
-        extended = 'extended' in functionPattern
+        extended = 'prefixed' in functionPattern
         
         #find the line where the function starts
-        with open(fPath, 'r') as f:
+        with open(fName, 'r') as f:
             
 
             testPattern = re.compile(functionPattern)
@@ -95,10 +80,11 @@ class ReportCreator:
                 results = testPattern.findall(line)
                 if results:
                     functionStart = i
+                    break;
         
         #Not sure that this is strictly necessary, but calling f.readlines before the enumerator in the same block 
         #was causing nothing to be found in the loop.
-        with open(fPath, 'r') as f:
+        with open(fName, 'r') as f:
             fLines = f.readlines()
             
             
