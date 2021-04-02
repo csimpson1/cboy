@@ -8,13 +8,28 @@ import requests
 import sys
 
 
+def get_file_path(fName):
+    """
+    Assumes that we have the following directory structure 
+    
+    cboy -> src -> fName
+         \> scripts -> OpcodeReport
+    """
+    currentDir = os.path.dirname(__file__)
+    parentDir = os.path.split(currentDir)[0]
+    fPath = os.path.join(parentDir, 'src', fName)
+    
+    return fPath
+
+
 class ReportCreator:
     
     def __init__(self):
         self.cur = self.connect()
         self.implementedOpcodes = []
-        self.find_implemented_opcodes(r'void interpret_opcode', 'opcodes.c')
-        self.find_implemented_opcodes(r'void interpret_prefixed_opcode', 'prefixed_opcodes.c')
+        #Getting the path for the opcode files
+        self.find_implemented_opcodes(r'void interpret_opcode', get_file_path('opcodes.c'))
+        self.find_implemented_opcodes(r'void interpret_prefixed_opcode', get_file_path('prefixed_opcodes.c'))
         
         
         self.total_opcodes = self.find_all_opcodes()
@@ -35,6 +50,7 @@ class ReportCreator:
         cur = self.conn.cursor()
         print("Connected to DB")
         return cur
+    
     
     def find_all_opcodes(self):
         """

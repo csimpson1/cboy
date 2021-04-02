@@ -3,6 +3,7 @@ from functools import partial
 import json
 import mariadb
 import os
+import OpcodeReport
 import requests
 import sys
 
@@ -90,6 +91,8 @@ class OpcodeGenerator:
         
         else:
             print(f'No file {fName}, skipping cleanup')
+            
+    
             
     
     def _build_case_inc(self, tgt, src, bytes):
@@ -566,12 +569,21 @@ class OpcodeGenerator:
         This function creates a header file and a c file which will contain all of the case statements which we
         have defined for the class of operands specified.  This function handles boilerplate creation, and then defers
         creation of the actual cases to the create_cases function
+        
+        
+        Will write to a directory called /src in the parent directory of the directory holding this script
+        
+        cboy -> src -> output
+             \> scripts -> OpcodeGenerator.py
+        
         """
+        
+        
         
         #File name decisions
         modifier = '' if not prefixed else 'prefixed_'
-        fName = f'{modifier}opcodes.c'
-        headerName = f'{modifier}opcodes.h'
+        fName = OpcodeReport.get_file_path(f'{modifier}opcodes.c')
+        headerName =  OpcodeReport.get_file_path(f'{modifier}opcodes.h')
         
         self.cleanup(headerName)
         
@@ -631,4 +643,9 @@ class OpcodeGenerator:
 if __name__ == '__main__':
     g = OpcodeGenerator()
     g.build_case_files()
+    
+    r = OpcodeReport.ReportCreator()
+    r.output_base_rpt('opcodes.csv')
+    r.output_summary_rpt('opcodes_summary.csv')
+    print("Reports created")
     
