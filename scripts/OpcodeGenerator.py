@@ -38,7 +38,8 @@ class OpcodeGenerator:
                             'RES' : partial(self._build_case_set_reset, 0),
                             'LD'  : self._build_case_ld,
                             'BIT' : self._build_case_bit,
-                            'SWAP': self._build_case_swap
+                            'SWAP': self._build_case_swap,
+                            'INC' : self._build_case_inc
                             }
         
         """
@@ -48,8 +49,9 @@ class OpcodeGenerator:
                             'SET' : "Bit setting operations",
                             'RES' : "Bit Resetting operations",
                             'LD'  : "Load operations",
-                            'BIT' : "Bit compliment operations" ,
-                            'SWAP': "Swap nibble operations"
+                            'BIT' : "Bit compliment operations",
+                            'SWAP': "Swap nibble operations",
+                            'INC' : '8 / 16 bit increment operations'
                             }
         
         
@@ -89,6 +91,51 @@ class OpcodeGenerator:
         else:
             print(f'No file {fName}, skipping cleanup')
             
+    
+    def _build_case_inc(self, tgt, src, bytes):
+        """
+        The increment operation adds 1 to a target register. There's two flavors:
+        1) We're incrementing an 8 bit register, either in the CPU, or in memory
+        2) We're incrementing a 16 bit register in the CPU
+        
+        The 16b operation is simpler, it sets no flags. Flags across all 8bit operations 
+        are the same as well, so this is done in a helper function
+        """
+        
+        tgtName = tgt[0]
+        tgtImmediate = tgt[1]
+        case = []
+        
+        #We're incrementing an 8 bit registers
+        if tgtName in ['A', 'B', 'C', 'D', 'E', 'H', 'L']:
+            case.append(f'unsigned char toInc = cpu -> {tgtName.lower()};\n')
+            case.append('unsigned char incremented = toInc + 1;\n')
+            case.append(f'cpu -> {tgtName.lower()};\n')
+            self._build_flags_inc(case)
+        
+        #Incrementing an 8 bit register in memory    
+        elif tgtName =='HL' and tgtImmediate == 0:
+            case.append(f'unsigned char toInc = read_mem(mem, GET_HL(cpu));\n')
+            case.append('unsigned char incremented = toInc + 1;\n')
+            case.append(f'write_mem(mem, GET_HL(cpu), incremented);\n')
+            self._build_flags_inc(case)
+            
+        elif tgtName in ['BC', 'DE', 'HL', 'SP']:
+            case.append(f'unsigned short toInc = GET_{tgtName}(cpu);\n')
+            case.append('unsigned short incremented = toInc + 1;\n')
+            case.append(f'SET_{tgtName}(cpu, incremented);\n')
+        else:
+            print('Error determining code for target variable')
+            print(tgt)
+            sys.exit(-1)
+            
+        case = map(self.indent_string, case)
+        return ''.join(case)
+            
+    def _build_flags_inc(self, case):
+        case.append('SET_ZF(cpu, (incremented == 0));\n')
+        case.append('SET_NF(cpu, 0);\n')
+        case.append('SET_HF(cpu, HC_CHECK(toInc, 0x1));\n')
 
     def _build_case_swap(self, tgt, src, bytes):
         tgtName = tgt[0]
@@ -570,7 +617,7 @@ class OpcodeGenerator:
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
-        self.generic_case_builder(['LD'])
+        self.generic_case_builder(['LD', 'INC'])
                     
                 
             
@@ -583,7 +630,5 @@ class OpcodeGenerator:
             
 if __name__ == '__main__':
     g = OpcodeGenerator()
-    
-    
     g.build_case_files()
     
