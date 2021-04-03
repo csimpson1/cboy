@@ -1252,5 +1252,112 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			break;
 		}
 
+		/***********************
+		  RST: RST Operations
+		***********************/
+		case 0xC7:{ //RST 00H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x00);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xCF:{ //RST 08H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x08);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xD7:{ //RST 10H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x10);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xDF:{ //RST 18H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x18);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xE7:{ //RST 20H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x20);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xEF:{ //RST 28H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x28);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xF7:{ //RST 30H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x30);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xFF:{ //RST 38H None
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char highByte = get_high_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, highByte);
+			cpu -> sp = cpu -> cp - 1;
+			unsigned char lowByte = get_low_byte(&(cpu->pc));
+			write_mem(mem, cpu->sp, lowByte);
+			set_high_byte(&(pc -> sp), (char) 0x00);
+			set_low_byte(&(pc -> sp), (char) 0x38);
+			increment_timer(mem, 16);
+			break;
+		}
+
 	}
 }

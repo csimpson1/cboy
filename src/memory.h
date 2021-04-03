@@ -35,14 +35,14 @@
 
 // Important registers I've known and loved
 // Jump vectors for RST instruction
-#define RST_0        0x0000
-#define RST_8        0x0008
-#define RST_10       0x0010
-#define RST_18       0x0018
-#define RST_20       0x0020
-#define RST_28       0x0028
-#define RST_30       0x0030
-#define RST_38       0x0038
+#define RST_0       0x0000
+#define RST_8       0x0008
+#define RST_10      0x0010
+#define RST_18      0x0018
+#define RST_20      0x0020
+#define RST_28      0x0028
+#define RST_30      0x0030
+#define RST_38      0x0038
 
 // Jump vectors for interrupts
 #define INT_40       0x0040 // VBlank Interrupt

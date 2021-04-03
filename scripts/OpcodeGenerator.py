@@ -44,7 +44,8 @@ class OpcodeGenerator:
                             'ADD' : self._build_case_add,
                             'AND' : partial(self._build_case_logical, '&'),
                             'OR'  : partial(self._build_case_logical, '|'),
-                            'XOR' : partial(self._build_case_logical, '^')
+                            'XOR' : partial(self._build_case_logical, '^'),
+                            'RST' : self._build_case_rst
                             }
         
         """
@@ -60,7 +61,8 @@ class OpcodeGenerator:
                             'ADD' : '8 / 16 bit add operations',
                             'AND' : 'Bitwise AND operations',
                             'OR'  : 'Bitwise OR operations',
-                            'XOR' : 'Bitwise XOR operations'
+                            'XOR' : 'Bitwise XOR operations',
+                            'RST' : 'RST Operations'
                             }
         
         
@@ -103,6 +105,40 @@ class OpcodeGenerator:
     def print_case_error(self, var, params):
             print(f'Error determining code for {var} variable')
             print(params)
+            
+    def _build_case_rst(self, tgt, src, bytes):
+        """
+        The reset operation pushes the current value of the SP onto the stack and
+        then jumps to an RST location in memory.
+        
+        The push to the stack works like this. First, SP is decremented by one, and
+        the high order byte of the PC is loaded to the location specified by the SP. SP is
+        decremented by 1 again, and this time the low order byte of the PC is stored.
+        
+        Depending on the operand, we'll load the PC with one of 8 values
+        
+        """
+        
+        #The target is formatted as something like 10H, H signifying hex
+        #Just leave that part off, the number is what's important
+        tgtName = tgt[0][0:2]
+        case = []
+        #Push the PC to the stack
+        case.append('cpu -> sp = cpu -> cp - 1;\n')
+        case.append('unsigned char highByte = get_high_byte(&(cpu->pc));\n')
+        case.append('write_mem(mem, cpu->sp, highByte);\n')
+        case.append('cpu -> sp = cpu -> cp - 1;\n')
+        case.append('unsigned char lowByte = get_low_byte(&(cpu->pc));\n')
+        case.append('write_mem(mem, cpu->sp, lowByte);\n')
+        
+        #Now load the jump vector into the PC
+        case.append('set_high_byte(&(pc -> sp), (char) 0x00);\n')
+        case.append(f'set_low_byte(&(pc -> sp), (char) 0x{tgtName});\n')
+        
+        case = map(self.indent_string, case)
+        return ''.join(case)
+        
+        
     
     def _build_case_logical(self, operand, tgt, src, bytes):
         """
@@ -763,7 +799,7 @@ class OpcodeGenerator:
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR'])
+        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST'])
                     
                 
             
