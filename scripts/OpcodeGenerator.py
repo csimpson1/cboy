@@ -41,7 +41,8 @@ class OpcodeGenerator:
                             'BIT' : self._build_case_bit,
                             'SWAP': self._build_case_swap,
                             'INC' : self._build_case_inc,
-                            'ADD' : self._build_case_add
+                            'ADD' : self._build_case_add,
+                            'AND' : self._build_case_and
                             }
         
         """
@@ -54,7 +55,8 @@ class OpcodeGenerator:
                             'BIT' : "Bit compliment operations",
                             'SWAP': "Swap nibble operations",
                             'INC' : '8 / 16 bit increment operations',
-                            'ADD' : '8 / 16 bit add operations'
+                            'ADD' : '8 / 16 bit add operations',
+                            'AND' : 'Bitwise AND operations'
                             }
         
         
@@ -94,8 +96,46 @@ class OpcodeGenerator:
         else:
             print(f'No file {fName}, skipping cleanup')
             
+    def print_case_error(self, var, params):
+            print(f'Error determining code for {var} variable')
+            print(params)
     
+    def _build_case_and(self, tgt, src, bytes):
+        """
+        The AND operation takes the bitwise AND of some 8b value and the accumulator,
+        and stores that value in the accumulator. 
+        
+         REG  ^ A -> A
+        (REG) ^ A -> A
+          d8  ^ A -> A
+        """
+        tgtName = tgt[0]
+        case = []
+        
+        if tgtName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']:
+            case.append(f'unsigned char tgt = cpu -> {tgtName.lower()};\n')
+        
+        elif tgtName == 'HL':
+            case.append('unsigned char tgt = read_mem(mem, GET_HL(cpu);\n')
+        
+        elif tgtName == 'd8':
+            case.append('unsigned char tgt = get_byte(cpu, mem);\n')
+        
+        else:
+            self.print_case_error('src', src)
             
+        case.append('cpu -> a = cpu -> a & tgt;\n')
+        
+        #flags
+        case.append('SET_ZF(cpu, (cpu -> a == 0));\n')
+        case.append('SET_NF(cpu, 0);\n')
+        case.append('SET_HF(cpu, 0);\n')
+        case.append('SET_CF(cpu, 0);\n')
+        
+        case = map(self.indent_string, case)
+        return ''.join(case)
+        
+        
     
     def _build_case_add(self, tgt, src, bytes):
         """
@@ -134,7 +174,7 @@ class OpcodeGenerator:
             
             #Reading immediate data from the stream
             elif(srcName == 'd8' and tgtName == 'A'):
-                case.append('unsigned char src = get_byte(cpu);\n')
+                case.append('unsigned char src = get_byte(cpu, mem);\n')
             
             #Reading data from a register    
             else:
@@ -165,7 +205,7 @@ class OpcodeGenerator:
             
         #Signed addition to the stack pointer
         elif srcName == 'r8':
-            case.append('unsigned char src = get_byte(cpu);\n')
+            case.append('unsigned char src = get_byte(cpu, mem);\n')
             case.append('int  srcInt = (int) src;\n')
             case.append(f'unsigned short tgt = GET_{tgtName}(cpu);\n')
             case.append('int tgtInt = (int) tgt;\n')
@@ -180,9 +220,7 @@ class OpcodeGenerator:
             case.append('SET_CF(cpu, src, tgt, result);\n')
         
         else:
-            print('Error determining code for src variable')
-            print(src)
-            sys.exit(-1)
+            self.print_case_error('src', src)
             
         
         case = map(self.indent_string, case)
@@ -225,9 +263,7 @@ class OpcodeGenerator:
             case.append('unsigned short incremented = toInc + 1;\n')
             case.append(f'SET_{tgtName}(cpu, incremented);\n')
         else:
-            print('Error determining code for target variable')
-            print(tgt)
-            sys.exit(-1)
+            self.print_case_error('tgt', tgt)
             
         case = map(self.indent_string, case)
         return ''.join(case)
@@ -253,9 +289,7 @@ class OpcodeGenerator:
             case.append('write_mem(mem, GET_HL(cpu), swapped;\n')
         
         else:
-            print('Error determining code for target variable')
-            print(tgt)
-            sys.exit(-1)
+            self.print_case_error('tgt', tgt)
         
         case = map(self.indent_string, case)
         
@@ -287,9 +321,7 @@ class OpcodeGenerator:
         if tgtName in [f'{i}' for i in range(8)]:
             pass
         else:
-            print('Error determining code for target variable')
-            print(tgt)
-            sys.exit(-1)
+            self.print_case_error('tgt', tgt)
         
             
             
@@ -365,9 +397,7 @@ class OpcodeGenerator:
         
         
         else:
-            print("Error determining code for source variable")
-            print(src)
-            sys.exit(-1)
+            self.print_case_error('src', src)
 
                     
         
@@ -396,10 +426,7 @@ class OpcodeGenerator:
             tgtString = f'write_mem(mem, GET_{tgtName}(cpu), src);\n'
             
         else:
-            print("Error determining code for target variable")
-            print(tgt)
-            sys.exit(-1)
-            
+            self.print_case_error('tgt', tgt)
         
         #Dealing with actions. Same case as for the src variable. We only need to use the 16b macro to increment 
         tgtAction = tgt[2]
@@ -465,9 +492,7 @@ class OpcodeGenerator:
             case.append('unsigned char src = cpu -> a;\n')
         
         else:
-            print("Error determining code for source variable")
-            print(src)
-            sys.exit(-1)
+            self.print_case_error('tgt', tgt)
             
         #No actions are needed for these loads, so we skip this part
         
@@ -495,9 +520,7 @@ class OpcodeGenerator:
             
             
         else:
-            print("Error determining code for target variable")
-            print(tgt)
-            sys.exit(-1)
+            self.print_case_error('tgt', tgt)
         
         #Indent the lines of code in the case statement, and join them together into a single string    
         caseIndented = map(self.indent_string, case)
@@ -528,10 +551,8 @@ class OpcodeGenerator:
             case = command1 + command2
         
         else:
-            print("Unhandled case for SET operand")
+            self.print_case_error("src and tgt", src)
             print(tgt)
-            print(src)
-            sys.exit(-11)
         
         return case
             
@@ -729,7 +750,7 @@ class OpcodeGenerator:
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC', 'ADD'])
+        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND'])
                     
                 
             

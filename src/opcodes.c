@@ -921,7 +921,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0xC6:{ //ADD A d8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			unsigned char tgt = cpu -> a;
 			unsigned char result = src + tgt;
 			cpu->a = result;
@@ -934,7 +934,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0xE8:{ //ADD SP r8
-			unsigned char src = get_byte(cpu);
+			unsigned char src = get_byte(cpu, mem);
 			int  srcInt = (int) src;
 			unsigned short tgt = GET_SP(cpu);
 			int tgtInt = (int) tgt;
@@ -943,6 +943,108 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			SET_HF(cpu, HC_CHECK(src, tgt);
 			SET_CF(cpu, src, tgt, result);
 			increment_timer(mem, 16);
+			break;
+		}
+
+		/*******************************
+		  AND: Bitwise AND operations
+		*******************************/
+		case 0xA0:{ //AND B None
+			unsigned char tgt = cpu -> b;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xA1:{ //AND C None
+			unsigned char tgt = cpu -> c;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xA2:{ //AND D None
+			unsigned char tgt = cpu -> d;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xA3:{ //AND E None
+			unsigned char tgt = cpu -> e;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xA4:{ //AND H None
+			unsigned char tgt = cpu -> h;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xA5:{ //AND L None
+			unsigned char tgt = cpu -> l;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xA6:{ //AND HL None
+			unsigned char tgt = read_mem(mem, GET_HL(cpu);
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xA7:{ //AND A None
+			unsigned char tgt = cpu -> a;
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xE6:{ //AND d8 None
+			unsigned char tgt = get_byte(cpu, mem);
+			cpu -> a = cpu -> a & tgt;
+			SET_ZF(cpu, (cpu -> a == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, 0);
+			SET_CF(cpu, 0);
+			increment_timer(mem, 8);
 			break;
 		}
 
