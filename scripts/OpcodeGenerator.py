@@ -123,6 +123,7 @@ class OpcodeGenerator:
         
         else:
             self.print_case_error('src', src)
+            return
             
         case.append('cpu -> a = cpu -> a & tgt;\n')
         
@@ -221,6 +222,7 @@ class OpcodeGenerator:
         
         else:
             self.print_case_error('src', src)
+            return
             
         
         case = map(self.indent_string, case)
@@ -264,6 +266,7 @@ class OpcodeGenerator:
             case.append(f'SET_{tgtName}(cpu, incremented);\n')
         else:
             self.print_case_error('tgt', tgt)
+            return
             
         case = map(self.indent_string, case)
         return ''.join(case)
@@ -290,6 +293,7 @@ class OpcodeGenerator:
         
         else:
             self.print_case_error('tgt', tgt)
+            return
         
         case = map(self.indent_string, case)
         
@@ -313,15 +317,15 @@ class OpcodeGenerator:
             case.append(f'unsigned char bit = get_bit((int) read_mem(cpu, GET_HL(CPU), {tgtName}));\n')
             
         else:
-            print('Error determining code for source variable')
-            print(src)
-            sys.exit(-1)
+            self.print_case_error('src', src)
+            return
             
         #Just checking the tgt name, to make sure it is a valid bit position    
         if tgtName in [f'{i}' for i in range(8)]:
             pass
         else:
             self.print_case_error('tgt', tgt)
+            return
         
             
             
@@ -398,6 +402,7 @@ class OpcodeGenerator:
         
         else:
             self.print_case_error('src', src)
+            return
 
                     
         
@@ -427,6 +432,7 @@ class OpcodeGenerator:
             
         else:
             self.print_case_error('tgt', tgt)
+            return
         
         #Dealing with actions. Same case as for the src variable. We only need to use the 16b macro to increment 
         tgtAction = tgt[2]
@@ -493,6 +499,7 @@ class OpcodeGenerator:
         
         else:
             self.print_case_error('tgt', tgt)
+            return
             
         #No actions are needed for these loads, so we skip this part
         
@@ -521,6 +528,7 @@ class OpcodeGenerator:
             
         else:
             self.print_case_error('tgt', tgt)
+            return
         
         #Indent the lines of code in the case statement, and join them together into a single string    
         caseIndented = map(self.indent_string, case)
@@ -553,6 +561,7 @@ class OpcodeGenerator:
         else:
             self.print_case_error("src and tgt", src)
             print(tgt)
+            return
         
         return case
             
