@@ -42,7 +42,9 @@ class OpcodeGenerator:
                             'SWAP': self._build_case_swap,
                             'INC' : self._build_case_inc,
                             'ADD' : self._build_case_add,
-                            'AND' : self._build_case_and
+                            'AND' : partial(self._build_case_logical, '&'),
+                            'OR'  : partial(self._build_case_logical, '|'),
+                            'XOR' : partial(self._build_case_logical, '^')
                             }
         
         """
@@ -56,7 +58,9 @@ class OpcodeGenerator:
                             'SWAP': "Swap nibble operations",
                             'INC' : '8 / 16 bit increment operations',
                             'ADD' : '8 / 16 bit add operations',
-                            'AND' : 'Bitwise AND operations'
+                            'AND' : 'Bitwise AND operations',
+                            'OR'  : 'Bitwise OR operations',
+                            'XOR' : 'Bitwise XOR operations'
                             }
         
         
@@ -100,7 +104,7 @@ class OpcodeGenerator:
             print(f'Error determining code for {var} variable')
             print(params)
     
-    def _build_case_and(self, tgt, src, bytes):
+    def _build_case_logical(self, operand, tgt, src, bytes):
         """
         The AND operation takes the bitwise AND of some 8b value and the accumulator,
         and stores that value in the accumulator. 
@@ -125,7 +129,7 @@ class OpcodeGenerator:
             self.print_case_error('src', src)
             return
             
-        case.append('cpu -> a = cpu -> a & tgt;\n')
+        case.append(f'cpu -> a = cpu -> a {operand} tgt;\n')
         
         #flags
         case.append('SET_ZF(cpu, (cpu -> a == 0));\n')
@@ -759,7 +763,7 @@ class OpcodeGenerator:
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND'])
+        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR'])
                     
                 
             
