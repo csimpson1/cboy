@@ -954,7 +954,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -965,7 +965,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -976,7 +976,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -987,7 +987,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -998,7 +998,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -1009,7 +1009,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -1020,7 +1020,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
@@ -1031,7 +1031,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
@@ -1042,7 +1042,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			cpu -> a = cpu -> a & tgt;
 			SET_ZF(cpu, (cpu -> a == 0));
 			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
+			SET_HF(cpu, 1);
 			SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;

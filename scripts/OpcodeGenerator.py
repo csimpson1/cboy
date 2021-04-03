@@ -134,12 +134,12 @@ class OpcodeGenerator:
         #flags
         case.append('SET_ZF(cpu, (cpu -> a == 0));\n')
         case.append('SET_NF(cpu, 0);\n')
-        case.append('SET_HF(cpu, 0);\n')
+        case.append('SET_HF(cpu, 1);\n') if operand == '&' else case.append('SET_HF(cpu, 0);\n')
         case.append('SET_CF(cpu, 0);\n')
+
         
         case = map(self.indent_string, case)
         return ''.join(case)
-        
         
     
     def _build_case_add(self, tgt, src, bytes):
