@@ -7,8 +7,9 @@
 //The HC_CHECK for 8 bit numbers gets bits 0-3 from each number, and sees if the result would have caused a carry to bit 4
 #define HC_CHECK(val1, val2) (((val1&0xf) + (val2&0xf))&0x10 == 0x10)
 #define HC_CHECK_8B_SUB(val1, val2) (((val1 & 0xF) - (val2 & 0xF)) < 0)
-//Will this work if we try it with chars?
-#define C_CHECK(val1, val2) (((val1&0xf0) + (val2&0xf0))&0x100 == 0x100)
+#define HC_CHECK_16B_ADD(val1, val2) (((val1 & 0XFFF) + (val2 & 0xFFF)) & 0x1000 == 0x1000)
+//We have an overflow if the result is smaller than either of the operands
+#define C_CHECK(val1, val2, result) ( (result < val1) || (result < val2) )
 
 #define SET_ZF(cpu, val) set_bit_char(&(cpu->f), 7, val)
 #define SET_NF(cpu, val) set_bit_char(&(cpu->f), 6, val)

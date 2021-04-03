@@ -40,7 +40,8 @@ class OpcodeGenerator:
                             'LD'  : self._build_case_ld,
                             'BIT' : self._build_case_bit,
                             'SWAP': self._build_case_swap,
-                            'INC' : self._build_case_inc
+                            'INC' : self._build_case_inc,
+                            'ADD' : self._build_case_add
                             }
         
         """
@@ -52,7 +53,8 @@ class OpcodeGenerator:
                             'LD'  : "Load operations",
                             'BIT' : "Bit compliment operations",
                             'SWAP': "Swap nibble operations",
-                            'INC' : '8 / 16 bit increment operations'
+                            'INC' : '8 / 16 bit increment operations',
+                            'ADD' : '8 / 16 bit add operations'
                             }
         
         
@@ -94,6 +96,101 @@ class OpcodeGenerator:
             
     
             
+    
+    def _build_case_add(self, tgt, src, bytes):
+        """
+        There are a few kinds of add operations
+        
+        16B       + HL -> HL
+        8b        + A  -> A
+        8b Memory + A  -> A
+        8b Imm    + A  -> A
+        S8 Imm    + SP -> SP
+        
+        Flags for anything with an unsigned 8b operand are the same, Z, 0 ,H, C
+        
+        For S8 Imm, flags are 0,0,H,C
+        
+        For 16b registers, the flags are -, 0, H, C
+        
+        Where we have signed data, I think it is best to do away with shorts and chars.
+        Everthing needs to be cast to an INT to make sure that 1) The data type can actually hold 
+        whatever value we're storing and 2) We can actually perform a subtraction if needed.
+        
+        
+        """
+        
+        tgtName = tgt[0]
+        srcName = src[0]
+        srcImm = src[1]
+        
+        case = []
+        
+        #8 bit add
+        if srcName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L'] or (srcName == 'HL' and srcImm == 0) or (srcName == 'd8' and tgtName == 'A'):
+            #Reading data from a memory address
+            if srcName == 'HL' and srcImm == 0:
+                case.append('unsigned char src = read_mem(mem, GET_HL(cpu));\n')
+            
+            #Reading immediate data from the stream
+            elif(srcName == 'd8' and tgtName == 'A'):
+                case.append('unsigned char src = get_byte(cpu);\n')
+            
+            #Reading data from a register    
+            else:
+                case.append(f'unsigned char src = cpu -> {srcName.lower()};\n')
+                
+            case.append(f'unsigned char tgt = cpu -> {tgtName.lower()};\n')
+            case.append(f'unsigned char result = src + tgt;\n')
+            case.append(f'cpu->{tgtName.lower()} = result;\n')
+            
+            #Set flags
+            case.append('SET_ZF(cpu, (result == 0));\n')
+            case.append('SET_NF(cpu, 0);\n')
+            case.append('SET_HF(cpu, HC_CHECK(src, tgt));\n')
+            case.append('SET_CF(cpu, C_CHECK(src, tgt, result));\n')
+            
+        #16 bit add    
+        elif srcName in ['BC', 'DE', 'EF', 'HL', 'SP']:
+            case.append(f'unsigned short src = GET_{srcName}(cpu);\n')
+            case.append(f'unsigned short tgt = GET_{tgtName}(cpu);\n')
+            case.append('unsigned short result = src + tgt;\n')
+            case.append(f'SET_{tgtName}(cpu, result);\n')
+            
+            #Set flags
+            case.append('SET_NF(cpu,0);\n')
+            #Checking if a carry occurs from bit 11 to 12
+            case.append('SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));\n')
+            case.append('SET_CF(cpu, C_CHECK(src, tgt, result));\n')
+            
+        #Signed addition to the stack pointer
+        elif srcName == 'r8':
+            case.append('unsigned char src = get_byte(cpu);\n')
+            case.append('int  srcInt = (int) src;\n')
+            case.append(f'unsigned short tgt = GET_{tgtName}(cpu);\n')
+            case.append('int tgtInt = (int) tgt;\n')
+            #??
+            case.append('unsigned short result = (unsigned short)(srcInt + tgtInt);\n')
+            case.append(f'SET_{tgtName}(cpu, result);\n')
+            
+            #set flags
+            #??
+            case.append('SET_HF(cpu, HC_CHECK(src, tgt);\n')
+            #This needs to be tested with a test ROM, not sure on the behavior here
+            case.append('SET_CF(cpu, src, tgt, result);\n')
+        
+        else:
+            print('Error determining code for src variable')
+            print(src)
+            sys.exit(-1)
+            
+        
+        case = map(self.indent_string, case)
+        return ''.join(case)
+            
+            
+        
+        
     
     def _build_case_inc(self, tgt, src, bytes):
         """
@@ -527,9 +624,13 @@ class OpcodeGenerator:
             #with open(fName, 'a') as f:
             
                 
+
+            srcName = src[0] if src is not None else None
+            tgtName = tgt[0] if tgt is not None else None
+            print(f'Creating case for {code} {tgtName} {srcName}')    
+            
             #First see if we can generate a case for this code. 
             #Need to increment and decrement the indent level so we match that of the inside of the case
-                
             self.indentLevel += 1
             caseStr = self.case_builder[mnemonic](tgt, src, bytes)
             self.indentLevel -= 1
@@ -538,10 +639,9 @@ class OpcodeGenerator:
             if caseStr:
                 
                 #If there's no source or target we need to provide some value, so provide a null one
-                srcName = src[0] if src is not None else None
-                tgtName = tgt[0] if tgt is not None else None
+
                 
-                print(f'Creating case for {code} {tgtName} {srcName}')
+                
                 lines.append(self.indent_string(f"case {code}:{{ //{mnemonic} {tgtName} {srcName}\n"))
                 #Inside the case staetment so indent
                 
@@ -629,7 +729,7 @@ class OpcodeGenerator:
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC'])
+        self.generic_case_builder(['LD', 'INC', 'ADD'])
                     
                 
             

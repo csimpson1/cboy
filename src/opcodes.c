@@ -765,5 +765,186 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			break;
 		}
 
+		/**********************************
+		  ADD: 8 / 16 bit add operations
+		**********************************/
+		case 0x09:{ //ADD HL BC
+			unsigned short src = GET_BC(cpu);
+			unsigned short tgt = GET_HL(cpu);
+			unsigned short result = src + tgt;
+			SET_HL(cpu, result);
+			SET_NF(cpu,0);
+			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x19:{ //ADD HL DE
+			unsigned short src = GET_DE(cpu);
+			unsigned short tgt = GET_HL(cpu);
+			unsigned short result = src + tgt;
+			SET_HL(cpu, result);
+			SET_NF(cpu,0);
+			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x29:{ //ADD HL HL
+			unsigned short src = GET_HL(cpu);
+			unsigned short tgt = GET_HL(cpu);
+			unsigned short result = src + tgt;
+			SET_HL(cpu, result);
+			SET_NF(cpu,0);
+			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x39:{ //ADD HL SP
+			unsigned short src = GET_SP(cpu);
+			unsigned short tgt = GET_HL(cpu);
+			unsigned short result = src + tgt;
+			SET_HL(cpu, result);
+			SET_NF(cpu,0);
+			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x80:{ //ADD A B
+			unsigned char src = cpu -> b;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0x81:{ //ADD A C
+			unsigned char src = cpu -> c;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0x82:{ //ADD A D
+			unsigned char src = cpu -> d;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0x83:{ //ADD A E
+			unsigned char src = cpu -> e;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0x84:{ //ADD A H
+			unsigned char src = cpu -> h;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0x85:{ //ADD A L
+			unsigned char src = cpu -> l;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0x86:{ //ADD A HL
+			unsigned char src = read_mem(mem, GET_HL(cpu));
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x87:{ //ADD A A
+			unsigned char src = cpu -> a;
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xC6:{ //ADD A d8
+			unsigned char src = get_byte(cpu);
+			unsigned char tgt = cpu -> a;
+			unsigned char result = src + tgt;
+			cpu->a = result;
+			SET_ZF(cpu, (result == 0));
+			SET_NF(cpu, 0);
+			SET_HF(cpu, HC_CHECK(src, tgt));
+			SET_CF(cpu, C_CHECK(src, tgt, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xE8:{ //ADD SP r8
+			unsigned char src = get_byte(cpu);
+			int  srcInt = (int) src;
+			unsigned short tgt = GET_SP(cpu);
+			int tgtInt = (int) tgt;
+			unsigned short result = (unsigned short)(srcInt + tgtInt);
+			SET_SP(cpu, result);
+			SET_HF(cpu, HC_CHECK(src, tgt);
+			SET_CF(cpu, src, tgt, result);
+			increment_timer(mem, 16);
+			break;
+		}
+
 	}
 }

@@ -58,7 +58,8 @@ class ReportCreator:
         """
         query = """
                 select distinct code, mnemonic
-                from opcodes_v;
+                from opcodes_v
+                where mnemonic not like 'ILLEGAL%'
                 """
         self.cur.execute(query)
         #return [x[0] for x in self.cur.fetchall()]
@@ -71,15 +72,6 @@ class ReportCreator:
         Update this object's list of opcodes with those that were implemented in a particular function, specified by functionPattern
         """
         
-   
-        #currentDir = os.path.dirname(__file__)
-        #parentDir = os.path.split(currentDir)[0]
-        
-        
-        #fPath = os.path.join(parentDir, 'src', fName)
-        
-        
-        #Pattern used to identify cases
         
         cases = []
         functionStart = None
@@ -116,6 +108,7 @@ class ReportCreator:
                 functionEnd = functionStart + i
                 break;
         
+        #Pattern to identify case statement
         casePattern = re.compile('case (0x..)')
             
         for line in fLines[functionStart:functionEnd + 1]:
