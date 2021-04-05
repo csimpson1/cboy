@@ -1372,5 +1372,230 @@ void interpret_prefixed_opcodes(CPU *cpu, unsigned char *mem, unsigned char opco
 			break;
 		}
 
+		/***********************
+		  SRA: SRA operations
+		***********************/
+		case 0x28:{ //SRA B None
+			unsigned char toShift = cpu -> b;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> b = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x29:{ //SRA C None
+			unsigned char toShift = cpu -> c;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> c = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x2A:{ //SRA D None
+			unsigned char toShift = cpu -> d;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> d = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x2B:{ //SRA E None
+			unsigned char toShift = cpu -> e;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> e = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x2C:{ //SRA H None
+			unsigned char toShift = cpu -> h;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> h = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x2D:{ //SRA L None
+			unsigned char toShift = cpu -> l;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> l = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x2E:{ //SRA HL None
+			unsigned char toShift = read_mem(mem, GET_HL(cpu));
+			unsigned char shifted = sra(&toShift, cpu);
+			write_mem(mem, GET_HL(cpu), shifted);
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0x2F:{ //SRA A None
+			unsigned char toShift = cpu -> a;
+			unsigned char shifted = sra(&toShift, cpu);
+			cpu -> a = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		/***********************
+		  SRL: SRL operations
+		***********************/
+		case 0x38:{ //SRL B None
+			unsigned char toShift = cpu -> b;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> b = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x39:{ //SRL C None
+			unsigned char toShift = cpu -> c;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> c = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x3A:{ //SRL D None
+			unsigned char toShift = cpu -> d;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> d = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x3B:{ //SRL E None
+			unsigned char toShift = cpu -> e;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> e = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x3C:{ //SRL H None
+			unsigned char toShift = cpu -> h;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> h = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x3D:{ //SRL L None
+			unsigned char toShift = cpu -> l;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> l = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x3E:{ //SRL HL None
+			unsigned char toShift = read_mem(mem, GET_HL(cpu));
+			unsigned char shifted = srl(&toShift, cpu);
+			write_mem(mem, GET_HL(cpu), shifted);
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0x3F:{ //SRL A None
+			unsigned char toShift = cpu -> a;
+			unsigned char shifted = srl(&toShift, cpu);
+			cpu -> a = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		/***********************
+		  SLA: SLA operations
+		***********************/
+		case 0x20:{ //SLA B None
+			unsigned char toShift = cpu -> b;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> b = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x21:{ //SLA C None
+			unsigned char toShift = cpu -> c;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> c = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x22:{ //SLA D None
+			unsigned char toShift = cpu -> d;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> d = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x23:{ //SLA E None
+			unsigned char toShift = cpu -> e;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> e = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x24:{ //SLA H None
+			unsigned char toShift = cpu -> h;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> h = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x25:{ //SLA L None
+			unsigned char toShift = cpu -> l;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> l = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0x26:{ //SLA HL None
+			unsigned char toShift = read_mem(mem, GET_HL(cpu));
+			unsigned char shifted = sla(&toShift, cpu);
+			write_mem(mem, GET_HL(cpu), shifted);
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0x27:{ //SLA A None
+			unsigned char toShift = cpu -> a;
+			unsigned char shifted = sla(&toShift, cpu);
+			cpu -> a = shifted;
+			SET_ZF(cpu, (shifted == 0));
+			increment_timer(mem, 8);
+			break;
+		}
+
 	}
 }

@@ -45,7 +45,10 @@ class OpcodeGenerator:
                             'AND' : partial(self._build_case_logical, '&'),
                             'OR'  : partial(self._build_case_logical, '|'),
                             'XOR' : partial(self._build_case_logical, '^'),
-                            'RST' : self._build_case_rst
+                            'RST' : self._build_case_rst,
+                            'SRL' : partial(self._build_case_shift, 'srl'),
+                            'SRA' : partial(self._build_case_shift, 'sra'),
+                            'SLA' : partial(self._build_case_shift, 'sla')
                             }
         
         """
@@ -62,7 +65,11 @@ class OpcodeGenerator:
                             'AND' : 'Bitwise AND operations',
                             'OR'  : 'Bitwise OR operations',
                             'XOR' : 'Bitwise XOR operations',
-                            'RST' : 'RST Operations'
+                            'RST' : 'RST perations',
+                            'SRL' : 'SRL operations',
+                            'SRA' : 'SRA operations',
+                            'SLA' : 'SLA operations'
+                            
                             }
         
         
@@ -105,6 +112,48 @@ class OpcodeGenerator:
     def print_case_error(self, var, params):
             print(f'Error determining code for {var} variable')
             print(params)
+            
+    def _build_case_shift(self, op, tgt, src, bytes):
+        """
+        The SLA, SRA, and SRR operations shift a register either to the left or right. The operations
+        ending in A do not change the terminal bit ie
+        
+        SRA 10101010 -> 11010101, CY => 0
+        SRL 10101010 -> 01010101, CY => 0
+        
+        These commands can either be applied to the 8b registers in the CPU, or to a register in memory
+        
+        """
+        
+        tgtName = tgt[0]
+        case = []
+        
+        if tgtName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']:
+            case.append(f'unsigned char toShift = cpu -> {tgtName.lower()};\n')
+            case.append(f'cpu -> {tgtName.lower()} = shifted;\n')
+        
+        elif tgtName == 'HL':
+            case.append(f'unsigned char toShift = read_mem(mem, GET_HL(cpu));\n')
+            case.append('write_mem(mem, GET_HL(cpu), shifted);\n')
+            
+        else:
+            self.print_case_error('tgt', tgt)
+            return
+        
+        #This line is common to both cases. Rather than create a new if/else,
+        #handle all lines with a tgt dependency first, and then insert this one
+        #which is common
+        case.insert(1,f'unsigned char shifted = {op}(&toShift, cpu);\n')
+        
+        #Flags. 
+        #No need to take care of the flag operations which are dependent on a 
+        #specific bit. These are handled by the respective operation
+        case.append('SET_ZF(cpu, (shifted == 0));\n')
+        
+        case = map(self.indent_string, case)
+        return ''.join(case)
+            
+        
             
     def _build_case_rst(self, tgt, src, bytes):
         """
@@ -338,6 +387,7 @@ class OpcodeGenerator:
         case = map(self.indent_string, case)
         
         return "".join(case)
+    
     def _build_case_bit(self, tgt, src, bytes):
         """
         Creates case statements for the BIT operation. This operation takes the compliment of a given bit from a register, and stores that value into the Z flag of the
@@ -798,7 +848,7 @@ class OpcodeGenerator:
         Wrapper for the generic case builder. For the GB there are two main classes of opcodes,
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
-        self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP'], prefixed=True)
+        self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP', 'SRA', 'SRL', 'SLA'], prefixed=True)
         self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST'])
                     
                 

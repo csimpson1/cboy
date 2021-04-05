@@ -79,6 +79,9 @@ unsigned short _get_8b_to_16b(unsigned char *highByte, unsigned char *lowByte);
 void _set_8b_to_16b(unsigned char *highByte, unsigned char *lowByte, unsigned short val);
 
 unsigned char swap_nibble(unsigned char *toSwap);
+unsigned char sra(unsigned char reg, struct registers *cpu);
+unsigned char srl(unsigned char reg, struct registers *cpu);
+unsigned char sla(unsigned char reg, struct registers *cpu);
 
 unsigned char get_byte(CPU *cpu, unsigned char *mem);
 void increment_timer(unsigned char *mem, unsigned char cycles);

@@ -1252,9 +1252,9 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			break;
 		}
 
-		/***********************
-		  RST: RST Operations
-		***********************/
+		/**********************
+		  RST: RST perations
+		**********************/
 		case 0xC7:{ //RST 00H None
 			cpu -> sp = cpu -> cp - 1;
 			unsigned char highByte = get_high_byte(&(cpu->pc));

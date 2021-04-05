@@ -1,4 +1,8 @@
 #include "cpu.h"
+#include "memory.h"
+#include "opcodes.h"
+#include "prefixed_opcodes.h"
+#include "bit_functions.h"
 
 
 void init_registers(CPU *cpu){
@@ -145,6 +149,34 @@ unsigned char swap_nibble(unsigned char *toSwap){
 
      return (lowNib | highNib);
 }
+
+unsigned char sra(unsigned char *reg, struct registers *cpu){
+    //Shift right the contents of a register, set bit 7 to 0. Contents of 0 bit are copied to c flag
+    unsigned char bit0 = *reg & 1;
+    unsigned char regShifted = ((*reg >> 1) & 0x7F); //01111111
+    SET_CF(cpu, bit0);
+    return regShifted;
+}
+
+unsigned char srl(unsigned char *reg, struct registers *cpu){
+    //Shift right the contents of a register, leave bit 7 be. Contents of 0 bit are copied to c flag
+    unsigned char bit7 = *reg & 0x80; //10000000
+    unsigned char bit0 = *reg & 1;
+
+    unsigned char regShifted = *reg >> 1;
+    regShifted = (regShifted & 0x7f) | bit7;
+    SET_CF(cpu, bit0);
+    return regShifted;
+}
+
+unsigned char sla(unsigned char *reg, struct registers *cpu){
+    //Shift left the contents of a register, set bit 0 to 0. Contents of bit 7 are copied to c flag
+    unsigned char bit7 = (*reg & 0x80) >> 7; //10000000
+    unsigned char regShifted = *reg << 1;
+    SET_CF(cpu, bit7);\
+    return regShifted;
+}
+
 
 unsigned char get_byte(CPU *cpu, unsigned char *mem){
     unsigned char byte = read_mem(mem, cpu->pc++);
