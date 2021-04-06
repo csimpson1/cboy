@@ -83,6 +83,11 @@ unsigned char sra(unsigned char reg, struct registers *cpu);
 unsigned char srl(unsigned char reg, struct registers *cpu);
 unsigned char sla(unsigned char reg, struct registers *cpu);
 
+unsigned char rot_right(unsigned char reg, struct registers *cpu);
+unsigned char rot_left(unsigned char reg, struct registers *cpu);
+unsigned char rot_right_carry(unsigned char reg, struct registers *cpu);
+unsigned char rot_left_carry(unsigned char reg, struct registers *cpu);
+
 unsigned char get_byte(CPU *cpu, unsigned char *mem);
 void increment_timer(unsigned char *mem, unsigned char cycles);
 void flags_timer_post_inc(CPU *cpu, unsigned char *mem, unsigned char oldVal, unsigned char newVal);

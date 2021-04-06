@@ -48,7 +48,16 @@ class OpcodeGenerator:
                             'RST' : self._build_case_rst,
                             'SRL' : partial(self._build_case_shift, 'srl'),
                             'SRA' : partial(self._build_case_shift, 'sra'),
-                            'SLA' : partial(self._build_case_shift, 'sla')
+                            'SLA' : partial(self._build_case_shift, 'sla'),
+                            'RR'  : partial(self._build_case_rot, 'rr'),
+                            'RRC'  : partial(self._build_case_rot, 'rrc'),
+                            'RL'  : partial(self._build_case_rot, 'rl'),
+                            'RLC'  : partial(self._build_case_rot, 'rlc'),
+                            #RXXA cases are rotate cases specifically for the A register
+                            #'RRA'  : partial(self._build_case_rot, 'rr'),
+                            #'RRCA'  : partial(self._build_case_rot, 'rrc'),
+                            #'RLA'  : partial(self._build_case_rot, 'rl'),
+                            #'RLCA'  : partial(self._build_case_rot, 'rlc')
                             }
         
         """
@@ -68,7 +77,15 @@ class OpcodeGenerator:
                             'RST' : 'RST perations',
                             'SRL' : 'SRL operations',
                             'SRA' : 'SRA operations',
-                            'SLA' : 'SLA operations'
+                            'SLA' : 'SLA operations',
+                            'RR'  : 'Rotate right operations',
+                            'RRC' : 'Rotate right & carry operations',
+                            'RL'  : 'Rotate left operations',
+                            'RLC' : 'Rotate left & carry operations',
+                            'RRA'  : 'Rotate right operations for A register ',
+                            'RRCA' : 'Rotate right & carry operations for A register',
+                            'RLA'  : 'Rotate left operations for A register',
+                            'RLCA' : 'Rotate left & carry operations for A register'
                             
                             }
         
@@ -113,6 +130,50 @@ class OpcodeGenerator:
             print(f'Error determining code for {var} variable')
             print(params)
             
+    def _build_case_rot(self, op, tgt, src, bytes):
+        """
+        The rotate operations act like a shift operation on a circular structure. Like the operation 
+        x -> x +- 1 mod(8). Operations that are suffixed with c store the value shifted out of the 
+        register and back in in the C flag. Those that are not do not have this behavior. 
+        
+        There are two sorts of targets, either a register in the CPU, or a register specified by a 
+        memory address
+        """
+        
+        tgtName = tgt[0]
+        case=[]
+        """
+        This dictionary contains the actual names of the functions that are used in the C code. 
+        Names that are not the mnemonics are used to improve the readability of the code
+        """
+        opTranslate={
+                        'rr': "rot_right",
+                        'rl': "rot_left",
+                        'rlc': "rot_right_carry",
+                        'rrc': "rot_left_carry"
+            }
+        
+
+        if tgtName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']:
+            
+            case.append(f'unsigned char toRotate = {opTranslate[op]}(cpu -> {tgtName.lower()}, cpu);\n')
+            case.append(f'cpu -> {tgtName.lower()} = toRotate;\n')
+            
+        elif tgtName == 'HL':
+            case.append('unsigned short address = GET_HL(cpu);\n')
+            case.append(f'unsigned char toRotate = read_mem(cpu, address);\n')
+            case.append(f'write_mem(cpu, address);\n')
+            
+        #Set the Z flag
+        case.append("SET_ZF(cpu, (toRotate == 0));\n")
+        
+        case = map(self.indent_string, case)
+        return ''.join(case)
+            
+        
+        
+
+            
     def _build_case_shift(self, op, tgt, src, bytes):
         """
         The SLA, SRA, and SRR operations shift a register either to the left or right. The operations
@@ -143,7 +204,7 @@ class OpcodeGenerator:
         #This line is common to both cases. Rather than create a new if/else,
         #handle all lines with a tgt dependency first, and then insert this one
         #which is common
-        case.insert(1,f'unsigned char shifted = {op}(&toShift, cpu);\n')
+        case.insert(1,f'unsigned char shifted = {op}(toShift, cpu);\n')
         
         #Flags. 
         #No need to take care of the flag operations which are dependent on a 
@@ -848,7 +909,7 @@ class OpcodeGenerator:
         Wrapper for the generic case builder. For the GB there are two main classes of opcodes,
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
-        self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP', 'SRA', 'SRL', 'SLA'], prefixed=True)
+        self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP', 'SRA', 'SRL', 'SLA', 'RR', 'RRC', 'RL', 'RLC'], prefixed=True)
         self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST'])
                     
                 

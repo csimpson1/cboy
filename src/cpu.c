@@ -143,38 +143,84 @@ void _set_8b_to_16b(unsigned char *highByte, unsigned char *lowByte, unsigned sh
 
 
 
-unsigned char swap_nibble(unsigned char *toSwap){
-    unsigned char highNib = (*toSwap & 0xF0) >> 4;
-    unsigned char lowNib = (*toSwap & 0x0F) <<4;
+unsigned char swap_nibble(unsigned char toSwap){
+    unsigned char highNib = (toSwap & 0xF0) >> 4;
+    unsigned char lowNib = (toSwap & 0x0F) <<4;
 
      return (lowNib | highNib);
 }
 
-unsigned char sra(unsigned char *reg, struct registers *cpu){
+//Shift functions
+
+unsigned char sra(unsigned char reg, struct registers *cpu){
     //Shift right the contents of a register, set bit 7 to 0. Contents of 0 bit are copied to c flag
-    unsigned char bit0 = *reg & 1;
-    unsigned char regShifted = ((*reg >> 1) & 0x7F); //01111111
+    unsigned char bit0 = reg & 1;
+    unsigned char regShifted = ((reg >> 1) & 0x7F); //01111111
     SET_CF(cpu, bit0);
     return regShifted;
 }
 
-unsigned char srl(unsigned char *reg, struct registers *cpu){
+unsigned char srl(unsigned char reg, struct registers *cpu){
     //Shift right the contents of a register, leave bit 7 be. Contents of 0 bit are copied to c flag
-    unsigned char bit7 = *reg & 0x80; //10000000
-    unsigned char bit0 = *reg & 1;
+    unsigned char bit7 = reg & 0x80; //10000000
+    unsigned char bit0 = reg & 1;
 
-    unsigned char regShifted = *reg >> 1;
+    unsigned char regShifted = reg >> 1;
     regShifted = (regShifted & 0x7f) | bit7;
     SET_CF(cpu, bit0);
     return regShifted;
 }
 
-unsigned char sla(unsigned char *reg, struct registers *cpu){
+unsigned char sla(unsigned char reg, struct registers *cpu){
     //Shift left the contents of a register, set bit 0 to 0. Contents of bit 7 are copied to c flag
-    unsigned char bit7 = (*reg & 0x80) >> 7; //10000000
-    unsigned char regShifted = *reg << 1;
+    unsigned char bit7 = (reg & 0x80) >> 7; //10000000
+    unsigned char regShifted = reg << 1;
     SET_CF(cpu, bit7);\
     return regShifted;
+}
+
+//Rotate functions
+unsigned char rot_right(unsigned char reg, struct registers *cpu){
+    unsigned char bit0 = reg & 0x1;
+    unsigned char rotated = reg >> 1;
+    rotated = (rotated & 0x7F) | (bit0 << 7); // 0x7F=01111111
+
+    check_and_set_zf(rotated, cpu);
+
+    return rotated;
+}
+
+unsigned char rot_left(unsigned char reg, struct registers *cpu){
+    unsigned char bit7 = (reg & 0x80) >> 7; // 0x80=10000000
+    unsigned char rotated = reg << 1;
+    rotated = (rotated & 0xFE) | bit7; // 0xFE=11111110
+
+    check_and_set_zf(rotated, cpu);
+
+    return rotated;
+}
+
+unsigned char rot_right_carry(unsigned char reg, struct registers *cpu){
+    unsigned char bit0 = reg & 0x1;
+    unsigned char rotated = reg >> 1;
+    rotated = (rotated & 0x7F) | (bit0 << 7); // 0x7F=01111111
+
+    check_and_set_zf(rotated, cpu);
+    SET_CF(cpu, bit0);
+
+    return rotated;
+}
+
+unsigned char rot_left_carry(unsigned char reg, struct registers *cpu){
+    unsigned char bit7 = (reg & 0x80) >> 7; // 0x80=10000000
+    unsigned char rotated = reg << 1;
+    rotated = (rotated & 0xFE) | bit7; // 0xFE=11111110
+
+    check_and_set_zf(rotated, cpu);
+    SET_CF(cpu, bit7);
+
+
+    return rotated;
 }
 
 
