@@ -4,10 +4,10 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  LD: Load operations
 		***********************/
 		case 0x01:{ //LD BC d16
-			unsigned char srcLowByte =  get_byte(cpu, mem);
-			unsigned char srcHighByte = get_byte(cpu, mem);
-			unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
-			SET_BC(cpu, src);
+unsigned char srcLowByte =  get_byte(cpu, mem);
+unsigned char srcHighByte = get_byte(cpu, mem);
+unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
+SET_BC(cpu, src);
 			increment_timer(mem, 12);
 			break;
 		}
@@ -27,13 +27,13 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x08:{ //LD a16 SP
-			unsigned char spLowByte = get_low_byte &(cpu -> sp);
-			unsigned char spHighByte = get_high_byte(&(cpu -> sp);
-			unsigned char addrLow = get_byte(cpu, mem);
-			unsigned char addrHigh = get_byte(cpu, mem);
-			unsigned short addr = _get_8b_to_16b(&addrLow, &addrHigh);
-			writemem(mem, addr, spLowByte);
-			writemem(mem, addr + 0x1, spHighByte);
+unsigned char spLowByte = get_low_byte &(cpu -> sp);
+unsigned char spHighByte = get_high_byte(&(cpu -> sp);
+unsigned char addrLow = get_byte(cpu, mem);
+unsigned char addrHigh = get_byte(cpu, mem);
+unsigned short addr = _get_8b_to_16b(&addrLow, &addrHigh);
+writemem(mem, addr, spLowByte);
+writemem(mem, addr + 0x1, spHighByte);
 			increment_timer(mem, 20);
 			break;
 		}
@@ -53,10 +53,10 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x11:{ //LD DE d16
-			unsigned char srcLowByte =  get_byte(cpu, mem);
-			unsigned char srcHighByte = get_byte(cpu, mem);
-			unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
-			SET_DE(cpu, src);
+unsigned char srcLowByte =  get_byte(cpu, mem);
+unsigned char srcHighByte = get_byte(cpu, mem);
+unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
+SET_DE(cpu, src);
 			increment_timer(mem, 12);
 			break;
 		}
@@ -90,10 +90,10 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x21:{ //LD HL d16
-			unsigned char srcLowByte =  get_byte(cpu, mem);
-			unsigned char srcHighByte = get_byte(cpu, mem);
-			unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
-			SET_HL(cpu, src);
+unsigned char srcLowByte =  get_byte(cpu, mem);
+unsigned char srcHighByte = get_byte(cpu, mem);
+unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
+SET_HL(cpu, src);
 			increment_timer(mem, 12);
 			break;
 		}
@@ -129,10 +129,10 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0x31:{ //LD SP d16
-			unsigned char srcLowByte =  get_byte(cpu, mem);
-			unsigned char srcHighByte = get_byte(cpu, mem);
-			unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
-			SET_SP(cpu, src);
+unsigned char srcLowByte =  get_byte(cpu, mem);
+unsigned char srcHighByte = get_byte(cpu, mem);
+unsigned short src = _get_8b_to_16b(&srcHighByte, &srcLowByte);
+SET_SP(cpu, src);
 			increment_timer(mem, 12);
 			break;
 		}
@@ -616,11 +616,11 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0xEA:{ //LD a16 A
-			unsigned char src = cpu -> a;
-			unsigned char addrLow = get_byte(cpu, mem);
-			unsigned char addrHigh = get_byte(cpu, mem);
-			unsigned short addr = _get_8b_to_16b(&addrLow, &addrHigh);
-			writemem(mem, addr, src;
+unsigned char src = cpu -> a;
+unsigned char addrLow = get_byte(cpu, mem);
+unsigned char addrHigh = get_byte(cpu, mem);
+unsigned short addr = _get_8b_to_16b(&addrLow, &addrHigh);
+writemem(mem, addr, src;
 			increment_timer(mem, 16);
 			break;
 		}
@@ -633,11 +633,11 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		}
 
 		case 0xFA:{ //LD A a16
-			unsigned char srcLowByte =  get_byte(cpu, mem);
-			unsigned char srcHighByte = get_byte(cpu, mem);
-			unsigned short address = _get_8b_to_16b(&srcHighByte, &srcLowByte);
-			unsigned short src = read_mem(mem, address);
-			cpu -> a = src;
+unsigned char srcLowByte =  get_byte(cpu, mem);
+unsigned char srcHighByte = get_byte(cpu, mem);
+unsigned short address = _get_8b_to_16b(&srcHighByte, &srcLowByte);
+unsigned short src = read_mem(mem, address);
+cpu -> a = src;
 			increment_timer(mem, 16);
 			break;
 		}
@@ -646,121 +646,121 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  INC: 8 / 16 bit increment operations
 		****************************************/
 		case 0x03:{ //INC BC None
-			unsigned short toInc = GET_BC(cpu);
-			unsigned short incremented = toInc + 1;
-			SET_BC(cpu, incremented);
+unsigned short toInc = GET_BC(cpu);
+unsigned short incremented = toInc + 1;
+SET_BC(cpu, incremented);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x04:{ //INC B None
-			unsigned char toInc = cpu -> b;
-			unsigned char incremented = toInc + 1;
-			cpu -> b;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> b;
+unsigned char incremented = toInc + 1;
+cpu -> b;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x0C:{ //INC C None
-			unsigned char toInc = cpu -> c;
-			unsigned char incremented = toInc + 1;
-			cpu -> c;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> c;
+unsigned char incremented = toInc + 1;
+cpu -> c;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x13:{ //INC DE None
-			unsigned short toInc = GET_DE(cpu);
-			unsigned short incremented = toInc + 1;
-			SET_DE(cpu, incremented);
+unsigned short toInc = GET_DE(cpu);
+unsigned short incremented = toInc + 1;
+SET_DE(cpu, incremented);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x14:{ //INC D None
-			unsigned char toInc = cpu -> d;
-			unsigned char incremented = toInc + 1;
-			cpu -> d;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> d;
+unsigned char incremented = toInc + 1;
+cpu -> d;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x1C:{ //INC E None
-			unsigned char toInc = cpu -> e;
-			unsigned char incremented = toInc + 1;
-			cpu -> e;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> e;
+unsigned char incremented = toInc + 1;
+cpu -> e;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x23:{ //INC HL None
-			unsigned short toInc = GET_HL(cpu);
-			unsigned short incremented = toInc + 1;
-			SET_HL(cpu, incremented);
+unsigned short toInc = GET_HL(cpu);
+unsigned short incremented = toInc + 1;
+SET_HL(cpu, incremented);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x24:{ //INC H None
-			unsigned char toInc = cpu -> h;
-			unsigned char incremented = toInc + 1;
-			cpu -> h;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> h;
+unsigned char incremented = toInc + 1;
+cpu -> h;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x2C:{ //INC L None
-			unsigned char toInc = cpu -> l;
-			unsigned char incremented = toInc + 1;
-			cpu -> l;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> l;
+unsigned char incremented = toInc + 1;
+cpu -> l;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x33:{ //INC SP None
-			unsigned short toInc = GET_SP(cpu);
-			unsigned short incremented = toInc + 1;
-			SET_SP(cpu, incremented);
+unsigned short toInc = GET_SP(cpu);
+unsigned short incremented = toInc + 1;
+SET_SP(cpu, incremented);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x34:{ //INC HL None
-			unsigned char toInc = read_mem(mem, GET_HL(cpu));
-			unsigned char incremented = toInc + 1;
-			write_mem(mem, GET_HL(cpu), incremented);
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = read_mem(mem, GET_HL(cpu));
+unsigned char incremented = toInc + 1;
+write_mem(mem, GET_HL(cpu), incremented);
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 12);
 			break;
 		}
 
 		case 0x3C:{ //INC A None
-			unsigned char toInc = cpu -> a;
-			unsigned char incremented = toInc + 1;
-			cpu -> a;
-			SET_ZF(cpu, (incremented == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(toInc, 0x1));
+unsigned char toInc = cpu -> a;
+unsigned char incremented = toInc + 1;
+cpu -> a;
+SET_ZF(cpu, (incremented == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(toInc, 0x1));
 			increment_timer(mem, 4);
 			break;
 		}
@@ -769,179 +769,179 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  ADD: 8 / 16 bit add operations
 		**********************************/
 		case 0x09:{ //ADD HL BC
-			unsigned short src = GET_BC(cpu);
-			unsigned short tgt = GET_HL(cpu);
-			unsigned short result = src + tgt;
-			SET_HL(cpu, result);
-			SET_NF(cpu,0);
-			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned short src = GET_BC(cpu);
+unsigned short tgt = GET_HL(cpu);
+unsigned short result = src + tgt;
+SET_HL(cpu, result);
+SET_NF(cpu,0);
+SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x19:{ //ADD HL DE
-			unsigned short src = GET_DE(cpu);
-			unsigned short tgt = GET_HL(cpu);
-			unsigned short result = src + tgt;
-			SET_HL(cpu, result);
-			SET_NF(cpu,0);
-			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned short src = GET_DE(cpu);
+unsigned short tgt = GET_HL(cpu);
+unsigned short result = src + tgt;
+SET_HL(cpu, result);
+SET_NF(cpu,0);
+SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x29:{ //ADD HL HL
-			unsigned short src = GET_HL(cpu);
-			unsigned short tgt = GET_HL(cpu);
-			unsigned short result = src + tgt;
-			SET_HL(cpu, result);
-			SET_NF(cpu,0);
-			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned short src = GET_HL(cpu);
+unsigned short tgt = GET_HL(cpu);
+unsigned short result = src + tgt;
+SET_HL(cpu, result);
+SET_NF(cpu,0);
+SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x39:{ //ADD HL SP
-			unsigned short src = GET_SP(cpu);
-			unsigned short tgt = GET_HL(cpu);
-			unsigned short result = src + tgt;
-			SET_HL(cpu, result);
-			SET_NF(cpu,0);
-			SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned short src = GET_SP(cpu);
+unsigned short tgt = GET_HL(cpu);
+unsigned short result = src + tgt;
+SET_HL(cpu, result);
+SET_NF(cpu,0);
+SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x80:{ //ADD A B
-			unsigned char src = cpu -> b;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> b;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x81:{ //ADD A C
-			unsigned char src = cpu -> c;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> c;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x82:{ //ADD A D
-			unsigned char src = cpu -> d;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> d;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x83:{ //ADD A E
-			unsigned char src = cpu -> e;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> e;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x84:{ //ADD A H
-			unsigned char src = cpu -> h;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> h;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x85:{ //ADD A L
-			unsigned char src = cpu -> l;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> l;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0x86:{ //ADD A HL
-			unsigned char src = read_mem(mem, GET_HL(cpu));
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = read_mem(mem, GET_HL(cpu));
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0x87:{ //ADD A A
-			unsigned char src = cpu -> a;
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = cpu -> a;
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xC6:{ //ADD A d8
-			unsigned char src = get_byte(cpu, mem);
-			unsigned char tgt = cpu -> a;
-			unsigned char result = src + tgt;
-			cpu->a = result;
-			SET_ZF(cpu, (result == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, HC_CHECK(src, tgt));
-			SET_CF(cpu, C_CHECK(src, tgt, result));
+unsigned char src = get_byte(cpu, mem);
+unsigned char tgt = cpu -> a;
+unsigned char result = src + tgt;
+cpu->a = result;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, HC_CHECK(src, tgt));
+SET_CF(cpu, C_CHECK(src, tgt, result));
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0xE8:{ //ADD SP r8
-			unsigned char src = get_byte(cpu, mem);
-			int  srcInt = (int) src;
-			unsigned short tgt = GET_SP(cpu);
-			int tgtInt = (int) tgt;
-			unsigned short result = (unsigned short)(srcInt + tgtInt);
-			SET_SP(cpu, result);
-			SET_HF(cpu, HC_CHECK(src, tgt);
-			SET_CF(cpu, src, tgt, result);
+unsigned char src = get_byte(cpu, mem);
+int  srcInt = (int) src;
+unsigned short tgt = GET_SP(cpu);
+int tgtInt = (int) tgt;
+unsigned short result = (unsigned short)(srcInt + tgtInt);
+SET_SP(cpu, result);
+SET_HF(cpu, HC_CHECK(src, tgt);
+SET_CF(cpu, src, tgt, result);
 			increment_timer(mem, 16);
 			break;
 		}
@@ -950,100 +950,100 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  AND: Bitwise AND operations
 		*******************************/
 		case 0xA0:{ //AND B None
-			unsigned char tgt = cpu -> b;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> b;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA1:{ //AND C None
-			unsigned char tgt = cpu -> c;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> c;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA2:{ //AND D None
-			unsigned char tgt = cpu -> d;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> d;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA3:{ //AND E None
-			unsigned char tgt = cpu -> e;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> e;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA4:{ //AND H None
-			unsigned char tgt = cpu -> h;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> h;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA5:{ //AND L None
-			unsigned char tgt = cpu -> l;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> l;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA6:{ //AND HL None
-			unsigned char tgt = read_mem(mem, GET_HL(cpu);
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = read_mem(mem, GET_HL(cpu);
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0xA7:{ //AND A None
-			unsigned char tgt = cpu -> a;
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> a;
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xE6:{ //AND d8 None
-			unsigned char tgt = get_byte(cpu, mem);
-			cpu -> a = cpu -> a & tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 1);
-			SET_CF(cpu, 0);
+unsigned char tgt = get_byte(cpu, mem);
+cpu -> a = cpu -> a & tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 1);
+SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
 		}
@@ -1052,100 +1052,100 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  OR: Bitwise OR operations
 		*****************************/
 		case 0xB0:{ //OR B None
-			unsigned char tgt = cpu -> b;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> b;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xB1:{ //OR C None
-			unsigned char tgt = cpu -> c;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> c;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xB2:{ //OR D None
-			unsigned char tgt = cpu -> d;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> d;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xB3:{ //OR E None
-			unsigned char tgt = cpu -> e;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> e;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xB4:{ //OR H None
-			unsigned char tgt = cpu -> h;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> h;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xB5:{ //OR L None
-			unsigned char tgt = cpu -> l;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> l;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xB6:{ //OR HL None
-			unsigned char tgt = read_mem(mem, GET_HL(cpu);
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = read_mem(mem, GET_HL(cpu);
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0xB7:{ //OR A None
-			unsigned char tgt = cpu -> a;
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> a;
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xF6:{ //OR d8 None
-			unsigned char tgt = get_byte(cpu, mem);
-			cpu -> a = cpu -> a | tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = get_byte(cpu, mem);
+cpu -> a = cpu -> a | tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
 		}
@@ -1154,100 +1154,100 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  XOR: Bitwise XOR operations
 		*******************************/
 		case 0xA8:{ //XOR B None
-			unsigned char tgt = cpu -> b;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> b;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xA9:{ //XOR C None
-			unsigned char tgt = cpu -> c;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> c;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xAA:{ //XOR D None
-			unsigned char tgt = cpu -> d;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> d;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xAB:{ //XOR E None
-			unsigned char tgt = cpu -> e;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> e;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xAC:{ //XOR H None
-			unsigned char tgt = cpu -> h;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> h;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xAD:{ //XOR L None
-			unsigned char tgt = cpu -> l;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> l;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xAE:{ //XOR HL None
-			unsigned char tgt = read_mem(mem, GET_HL(cpu);
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = read_mem(mem, GET_HL(cpu);
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
 		}
 
 		case 0xAF:{ //XOR A None
-			unsigned char tgt = cpu -> a;
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = cpu -> a;
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 4);
 			break;
 		}
 
 		case 0xEE:{ //XOR d8 None
-			unsigned char tgt = get_byte(cpu, mem);
-			cpu -> a = cpu -> a ^ tgt;
-			SET_ZF(cpu, (cpu -> a == 0));
-			SET_NF(cpu, 0);
-			SET_HF(cpu, 0);
-			SET_CF(cpu, 0);
+unsigned char tgt = get_byte(cpu, mem);
+cpu -> a = cpu -> a ^ tgt;
+SET_ZF(cpu, (cpu -> a == 0));
+SET_NF(cpu, 0);
+SET_HF(cpu, 0);
+SET_CF(cpu, 0);
 			increment_timer(mem, 8);
 			break;
 		}
@@ -1256,106 +1256,206 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  RST: RST perations
 		**********************/
 		case 0xC7:{ //RST 00H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x00);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x00);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xCF:{ //RST 08H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x08);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x08);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xD7:{ //RST 10H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x10);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x10);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xDF:{ //RST 18H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x18);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x18);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xE7:{ //RST 20H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x20);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x20);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xEF:{ //RST 28H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x28);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x28);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xF7:{ //RST 30H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x30);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x30);
 			increment_timer(mem, 16);
 			break;
 		}
 
 		case 0xFF:{ //RST 38H None
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char highByte = get_high_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, highByte);
-			cpu -> sp = cpu -> cp - 1;
-			unsigned char lowByte = get_low_byte(&(cpu->pc));
-			write_mem(mem, cpu->sp, lowByte);
-			set_high_byte(&(pc -> sp), (char) 0x00);
-			set_low_byte(&(pc -> sp), (char) 0x38);
+cpu -> sp = cpu -> cp - 1;
+unsigned char highByte = get_high_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, highByte);
+cpu -> sp = cpu -> cp - 1;
+unsigned char lowByte = get_low_byte(&(cpu->pc));
+write_mem(mem, cpu->sp, lowByte);
+set_high_byte(&(pc -> sp), (char) 0x00);
+set_low_byte(&(pc -> sp), (char) 0x38);
 			increment_timer(mem, 16);
+			break;
+		}
+
+		/**************************
+		  CP: Compare operations
+		**************************/
+		case 0xB8:{ //CP B None
+unsigned char subtrahend = cpu -> b;
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xB9:{ //CP C None
+unsigned char subtrahend = cpu -> c;
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xBA:{ //CP D None
+unsigned char subtrahend = cpu -> d;
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xBB:{ //CP E None
+unsigned char subtrahend = cpu -> e;
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xBC:{ //CP H None
+unsigned char subtrahend = cpu -> h;
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xBD:{ //CP L None
+unsigned char subtrahend = cpu -> l;
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xBE:{ //CP HL None
+unsigned char subtrahend = read_mem(mem, GET_HL(cpu));
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 8);
+			break;
+		}
+
+		case 0xBF:{ //CP A None
+SET_ZF(cpu, 0);
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), (cpu->a)));
+SET_CF(cpu, 0);
+			increment_timer(mem, 4);
+			break;
+		}
+
+		case 0xFE:{ //CP d8 None
+unsigned char subtrahend = get_byte(cpu, mem);
+unsigned char result = cpu -> a - subtrahend;
+SET_ZF(cpu, (result == 0));
+SET_NF(cpu, 1);
+SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));
+SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));
+			increment_timer(mem, 8);
 			break;
 		}
 

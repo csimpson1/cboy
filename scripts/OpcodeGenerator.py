@@ -50,14 +50,15 @@ class OpcodeGenerator:
                             'SRA' : partial(self._build_case_shift, 'sra'),
                             'SLA' : partial(self._build_case_shift, 'sla'),
                             'RR'  : partial(self._build_case_rot, 'rr'),
-                            'RRC'  : partial(self._build_case_rot, 'rrc'),
+                            'RRC' : partial(self._build_case_rot, 'rrc'),
                             'RL'  : partial(self._build_case_rot, 'rl'),
-                            'RLC'  : partial(self._build_case_rot, 'rlc'),
+                            'RLC' : partial(self._build_case_rot, 'rlc'),
                             #RXXA cases are rotate cases specifically for the A register
                             #'RRA'  : partial(self._build_case_rot, 'rr'),
                             #'RRCA'  : partial(self._build_case_rot, 'rrc'),
                             #'RLA'  : partial(self._build_case_rot, 'rl'),
                             #'RLCA'  : partial(self._build_case_rot, 'rlc')
+                            'CP'  : self._build_case_cp
                             }
         
         """
@@ -82,10 +83,11 @@ class OpcodeGenerator:
                             'RRC' : 'Rotate right & carry operations',
                             'RL'  : 'Rotate left operations',
                             'RLC' : 'Rotate left & carry operations',
-                            'RRA'  : 'Rotate right operations for A register ',
-                            'RRCA' : 'Rotate right & carry operations for A register',
-                            'RLA'  : 'Rotate left operations for A register',
-                            'RLCA' : 'Rotate left & carry operations for A register'
+                            'RRA' : 'Rotate right operations for A register ',
+                            'RRCA': 'Rotate right & carry operations for A register',
+                            'RLA' : 'Rotate left operations for A register',
+                            'RLCA': 'Rotate left & carry operations for A register',
+                            'CP'  : 'Compare operations' 
                             
                             }
         
@@ -108,6 +110,10 @@ class OpcodeGenerator:
         print("Connected to DB!")
         return cur
 
+    """
+    Helper functions
+    """
+    
     def indent_string(self, string):
         #Return a string with a specified number of tabs appended to the start
         indent=''
@@ -130,6 +136,56 @@ class OpcodeGenerator:
             print(f'Error determining code for {var} variable')
             print(params)
             
+    def prepare_case(self, acase):
+        """
+        Helper function for proper indentation of case statements
+        """
+        case = map(self.indent_string, acase)
+        return ''.join(acase)
+            
+    def _build_case_cp(self, tgt, src, bytes):
+        """
+        The cp or compare operation checks to see if a register, immediate, or value at a memory address
+        is equal to the value in A. If so, it sets the zero flag (think:subtracting the value of A and whatever).
+        The half carry  and carry flags are set as if a subtraction was done, but the value of A is not changed.
+        """
+        
+        tgtName = tgt[0]
+        case=[]
+        
+        if tgtName in ['B', 'C', 'D', 'E', 'F', 'H', 'L']:
+            case.append(f'unsigned char subtrahend = cpu -> {tgtName.lower()};\n')
+            
+        elif tgtName == 'A':
+            #No need to actually do the subtraction here, A-A is always 0. 
+            return self._get_flags_cp_a(case)
+        
+        elif tgtName == 'HL':
+            case.append('unsigned char subtrahend = read_mem(mem, GET_HL(cpu));\n')
+        
+        elif tgtName == 'd8':
+            case.append('unsigned char subtrahend = get_byte(cpu, mem);\n')
+        
+        case.append('unsigned char result = cpu -> a - subtrahend;\n')    
+        #Set the flags
+        case.append("SET_ZF(cpu, (result == 0));\n")
+        case.append("SET_NF(cpu, 1);\n")
+        case.append("SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));\n")
+        case.append("SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));\n")
+        
+        
+        return self.prepare_case(case)
+    
+    def _get_flags_cp_a(self, case):
+        # We know the result will be 0, and the subtrahend is A so setting flags is easy
+        case.append("SET_ZF(cpu, 0);\n")
+        case.append("SET_NF(cpu, 1);\n")
+        case.append("SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), (cpu->a)));\n")
+        case.append("SET_CF(cpu, 0);\n")
+        
+        
+        return self.prepare_case(case)
+        
     def _build_case_rot(self, op, tgt, src, bytes):
         """
         The rotate operations act like a shift operation on a circular structure. Like the operation 
@@ -167,8 +223,8 @@ class OpcodeGenerator:
         #Set the Z flag
         case.append("SET_ZF(cpu, (toRotate == 0));\n")
         
-        case = map(self.indent_string, case)
-        return ''.join(case)
+        
+        return self.prepare_case(case)
             
         
         
@@ -211,8 +267,8 @@ class OpcodeGenerator:
         #specific bit. These are handled by the respective operation
         case.append('SET_ZF(cpu, (shifted == 0));\n')
         
-        case = map(self.indent_string, case)
-        return ''.join(case)
+        
+        return self.prepare_case(case)
             
         
             
@@ -245,8 +301,8 @@ class OpcodeGenerator:
         case.append('set_high_byte(&(pc -> sp), (char) 0x00);\n')
         case.append(f'set_low_byte(&(pc -> sp), (char) 0x{tgtName});\n')
         
-        case = map(self.indent_string, case)
-        return ''.join(case)
+        
+        return self.prepare_case(case)
         
         
     
@@ -284,8 +340,8 @@ class OpcodeGenerator:
         case.append('SET_CF(cpu, 0);\n')
 
         
-        case = map(self.indent_string, case)
-        return ''.join(case)
+        
+        return self.prepare_case(case)
         
     
     def _build_case_add(self, tgt, src, bytes):
@@ -375,8 +431,8 @@ class OpcodeGenerator:
             return
             
         
-        case = map(self.indent_string, case)
-        return ''.join(case)
+        
+        return self.prepare_case(case)
             
             
         
@@ -418,8 +474,8 @@ class OpcodeGenerator:
             self.print_case_error('tgt', tgt)
             return
             
-        case = map(self.indent_string, case)
-        return ''.join(case)
+        
+        return self.prepare_case(case)
             
     def _build_flags_inc(self, case):
         case.append('SET_ZF(cpu, (incremented == 0));\n')
@@ -445,9 +501,9 @@ class OpcodeGenerator:
             self.print_case_error('tgt', tgt)
             return
         
-        case = map(self.indent_string, case)
         
-        return "".join(case)
+        
+        return self.prepare_case(case)
     
     def _build_case_bit(self, tgt, src, bytes):
         """
@@ -483,8 +539,8 @@ class OpcodeGenerator:
         case.append('unsigned char compliment = (bit == 0 : 1 : 0);\n')
         case.append('SET_ZF(cpu, compliment);\n')
         
-        caseIndented = map(self.indent_string, case)
-        return "".join(caseIndented)
+        
+        return self.prepare_case(case)
         
                 
     
@@ -682,8 +738,7 @@ class OpcodeGenerator:
             return
         
         #Indent the lines of code in the case statement, and join them together into a single string    
-        caseIndented = map(self.indent_string, case)
-        return "".join(caseIndented)
+        return self.prepare_case(case)
     
     def _build_case_set_reset(self, val, tgt, src, bytes):
         """
@@ -699,22 +754,21 @@ class OpcodeGenerator:
         reg = src[0]
         
         
-        case = ""
+        case = []
         
         if reg in ['A','F','B','C','D','E','H','L']:
-            case = self.indent_string(f"set_bit_char(&(cpu->{reg.lower()}), {bit}, 1);\n")
+            case.append(f"set_bit_char(&(cpu->{reg.lower()}), {bit}, 1);\n")
             
         elif reg == "HL":
-            command1 = self.indent_string("unsigned char addr = read_mem(mem, GET_HL(cpu));\n")
-            command2 = self.indent_string(f'set_bit_char(&addr, {bit}, {val});\n')
-            case = command1 + command2
+            case.append("unsigned char addr = read_mem(mem, GET_HL(cpu));\n")
+            case.append(f'set_bit_char(&addr, {bit}, {val});\n')
         
         else:
             self.print_case_error("src and tgt", src)
             print(tgt)
             return
         
-        return case
+        return self.prepare_case(case)
             
     def create_cases(self, mnemonic, indentLevel = 2):
         """
@@ -910,7 +964,7 @@ class OpcodeGenerator:
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP', 'SRA', 'SRL', 'SLA', 'RR', 'RRC', 'RL', 'RLC'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST'])
+        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST', 'CP'])
                     
                 
             
