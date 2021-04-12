@@ -3,6 +3,7 @@ from functools import partial
 import json
 import mariadb
 import os
+import OpcodeCase
 import OpcodeReport
 import requests
 import sys
@@ -28,10 +29,11 @@ class OpcodeGenerator:
                                             and op_order =?;
                                             """
                         }
+        
         """
         Given a mnemonic, define how you want to create the cases for that mnemomic.
         The mnemonic here will also be used in the output filename for the cases
-        """
+
         self.case_builder={
                             #Set and reset are basically the same, with a change in the value. 
                             #Using partial evaluation to save some code
@@ -61,9 +63,9 @@ class OpcodeGenerator:
                             'CP'  : self._build_case_cp
                             }
         
-        """
+
         Strings to be used in the comments of each set of cases
-        """
+
         self.descriptions={
                             'SET' : "Bit setting operations",
                             'RES' : "Bit Resetting operations",
@@ -91,7 +93,7 @@ class OpcodeGenerator:
                             
                             }
         
-        
+        """
     
     def connect(self):
         try:
@@ -109,7 +111,13 @@ class OpcodeGenerator:
         cur = self.conn.cursor()
         print("Connected to DB!")
         return cur
-
+    
+    def disconnect(self):
+        if self.cur:
+            self.cur.close()
+        if self.conn:
+            self.conn.close()
+    
     """
     Helper functions
     """
@@ -132,417 +140,6 @@ class OpcodeGenerator:
         else:
             print(f'No file {fName}, skipping cleanup')
             
-    def print_case_error(self, var, params):
-            print(f'Error determining code for {var} variable')
-            print(params)
-            
-    def prepare_case(self, acase):
-        """
-        Helper function for proper indentation of case statements
-        """
-        case = map(self.indent_string, acase)
-        return ''.join(acase)
-            
-    def _build_case_cp(self, tgt, src, bytes):
-        """
-        The cp or compare operation checks to see if a register, immediate, or value at a memory address
-        is equal to the value in A. If so, it sets the zero flag (think:subtracting the value of A and whatever).
-        The half carry  and carry flags are set as if a subtraction was done, but the value of A is not changed.
-        """
-        
-        tgtName = tgt[0]
-        case=[]
-        
-        if tgtName in ['B', 'C', 'D', 'E', 'F', 'H', 'L']:
-            case.append(f'unsigned char subtrahend = cpu -> {tgtName.lower()};\n')
-            
-        elif tgtName == 'A':
-            #No need to actually do the subtraction here, A-A is always 0. 
-            return self._get_flags_cp_a(case)
-        
-        elif tgtName == 'HL':
-            case.append('unsigned char subtrahend = read_mem(mem, GET_HL(cpu));\n')
-        
-        elif tgtName == 'd8':
-            case.append('unsigned char subtrahend = get_byte(cpu, mem);\n')
-        
-        case.append('unsigned char result = cpu -> a - subtrahend;\n')    
-        #Set the flags
-        case.append("SET_ZF(cpu, (result == 0));\n")
-        case.append("SET_NF(cpu, 1);\n")
-        case.append("SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), subtrahend));\n")
-        case.append("SET_CF(cpu, C_CHECK_SUB((cpu->a), subtrahend, result));\n")
-        
-        
-        return self.prepare_case(case)
-    
-    def _get_flags_cp_a(self, case):
-        # We know the result will be 0, and the subtrahend is A so setting flags is easy
-        case.append("SET_ZF(cpu, 0);\n")
-        case.append("SET_NF(cpu, 1);\n")
-        case.append("SET_HF(cpu, HC_CHECK_8B_SUB((cpu->a), (cpu->a)));\n")
-        case.append("SET_CF(cpu, 0);\n")
-        
-        
-        return self.prepare_case(case)
-        
-    def _build_case_rot(self, op, tgt, src, bytes):
-        """
-        The rotate operations act like a shift operation on a circular structure. Like the operation 
-        x -> x +- 1 mod(8). Operations that are suffixed with c store the value shifted out of the 
-        register and back in in the C flag. Those that are not do not have this behavior. 
-        
-        There are two sorts of targets, either a register in the CPU, or a register specified by a 
-        memory address
-        """
-        
-        tgtName = tgt[0]
-        case=[]
-        """
-        This dictionary contains the actual names of the functions that are used in the C code. 
-        Names that are not the mnemonics are used to improve the readability of the code
-        """
-        opTranslate={
-                        'rr': "rot_right",
-                        'rl': "rot_left",
-                        'rlc': "rot_right_carry",
-                        'rrc': "rot_left_carry"
-            }
-        
-
-        if tgtName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']:
-            
-            case.append(f'unsigned char toRotate = {opTranslate[op]}(cpu -> {tgtName.lower()}, cpu);\n')
-            case.append(f'cpu -> {tgtName.lower()} = toRotate;\n')
-            
-        elif tgtName == 'HL':
-            case.append('unsigned short address = GET_HL(cpu);\n')
-            case.append(f'unsigned char toRotate = read_mem(cpu, address);\n')
-            case.append(f'write_mem(cpu, address);\n')
-            
-        #Set the Z flag
-        case.append("SET_ZF(cpu, (toRotate == 0));\n")
-        
-        
-        return self.prepare_case(case)
-            
-        
-        
-
-            
-    def _build_case_shift(self, op, tgt, src, bytes):
-        """
-        The SLA, SRA, and SRR operations shift a register either to the left or right. The operations
-        ending in A do not change the terminal bit ie
-        
-        SRA 10101010 -> 11010101, CY => 0
-        SRL 10101010 -> 01010101, CY => 0
-        
-        These commands can either be applied to the 8b registers in the CPU, or to a register in memory
-        
-        """
-        
-        tgtName = tgt[0]
-        case = []
-        
-        if tgtName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']:
-            case.append(f'unsigned char toShift = cpu -> {tgtName.lower()};\n')
-            case.append(f'cpu -> {tgtName.lower()} = shifted;\n')
-        
-        elif tgtName == 'HL':
-            case.append(f'unsigned char toShift = read_mem(mem, GET_HL(cpu));\n')
-            case.append('write_mem(mem, GET_HL(cpu), shifted);\n')
-            
-        else:
-            self.print_case_error('tgt', tgt)
-            return
-        
-        #This line is common to both cases. Rather than create a new if/else,
-        #handle all lines with a tgt dependency first, and then insert this one
-        #which is common
-        case.insert(1,f'unsigned char shifted = {op}(toShift, cpu);\n')
-        
-        #Flags. 
-        #No need to take care of the flag operations which are dependent on a 
-        #specific bit. These are handled by the respective operation
-        case.append('SET_ZF(cpu, (shifted == 0));\n')
-        
-        
-        return self.prepare_case(case)
-            
-        
-            
-    def _build_case_rst(self, tgt, src, bytes):
-        """
-        The reset operation pushes the current value of the SP onto the stack and
-        then jumps to an RST location in memory.
-        
-        The push to the stack works like this. First, SP is decremented by one, and
-        the high order byte of the PC is loaded to the location specified by the SP. SP is
-        decremented by 1 again, and this time the low order byte of the PC is stored.
-        
-        Depending on the operand, we'll load the PC with one of 8 values
-        
-        """
-        
-        #The target is formatted as something like 10H, H signifying hex
-        #Just leave that part off, the number is what's important
-        tgtName = tgt[0][0:2]
-        case = []
-        #Push the PC to the stack
-        case.append('cpu -> sp = cpu -> cp - 1;\n')
-        case.append('unsigned char highByte = get_high_byte(&(cpu->pc));\n')
-        case.append('write_mem(mem, cpu->sp, highByte);\n')
-        case.append('cpu -> sp = cpu -> cp - 1;\n')
-        case.append('unsigned char lowByte = get_low_byte(&(cpu->pc));\n')
-        case.append('write_mem(mem, cpu->sp, lowByte);\n')
-        
-        #Now load the jump vector into the PC
-        case.append('set_high_byte(&(pc -> sp), (char) 0x00);\n')
-        case.append(f'set_low_byte(&(pc -> sp), (char) 0x{tgtName});\n')
-        
-        
-        return self.prepare_case(case)
-        
-        
-    
-    def _build_case_logical(self, operand, tgt, src, bytes):
-        """
-        The AND operation takes the bitwise AND of some 8b value and the accumulator,
-        and stores that value in the accumulator. 
-        
-         REG  ^ A -> A
-        (REG) ^ A -> A
-          d8  ^ A -> A
-        """
-        tgtName = tgt[0]
-        case = []
-        
-        if tgtName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']:
-            case.append(f'unsigned char tgt = cpu -> {tgtName.lower()};\n')
-        
-        elif tgtName == 'HL':
-            case.append('unsigned char tgt = read_mem(mem, GET_HL(cpu);\n')
-        
-        elif tgtName == 'd8':
-            case.append('unsigned char tgt = get_byte(cpu, mem);\n')
-        
-        else:
-            self.print_case_error('src', src)
-            return
-            
-        case.append(f'cpu -> a = cpu -> a {operand} tgt;\n')
-        
-        #flags
-        case.append('SET_ZF(cpu, (cpu -> a == 0));\n')
-        case.append('SET_NF(cpu, 0);\n')
-        case.append('SET_HF(cpu, 1);\n') if operand == '&' else case.append('SET_HF(cpu, 0);\n')
-        case.append('SET_CF(cpu, 0);\n')
-
-        
-        
-        return self.prepare_case(case)
-        
-    
-    def _build_case_add(self, tgt, src, bytes):
-        """
-        There are a few kinds of add operations
-        
-        16B       + HL -> HL
-        8b        + A  -> A
-        8b Memory + A  -> A
-        8b Imm    + A  -> A
-        S8 Imm    + SP -> SP
-        
-        Flags for anything with an unsigned 8b operand are the same, Z, 0 ,H, C
-        
-        For S8 Imm, flags are 0,0,H,C
-        
-        For 16b registers, the flags are -, 0, H, C
-        
-        Where we have signed data, I think it is best to do away with shorts and chars.
-        Everthing needs to be cast to an INT to make sure that 1) The data type can actually hold 
-        whatever value we're storing and 2) We can actually perform a subtraction if needed.
-        
-        
-        """
-        
-        tgtName = tgt[0]
-        srcName = src[0]
-        srcImm = src[1]
-        
-        case = []
-        
-        #8 bit add
-        if srcName in ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L'] or (srcName == 'HL' and srcImm == 0) or (srcName == 'd8' and tgtName == 'A'):
-            #Reading data from a memory address
-            if srcName == 'HL' and srcImm == 0:
-                case.append('unsigned char src = read_mem(mem, GET_HL(cpu));\n')
-            
-            #Reading immediate data from the stream
-            elif(srcName == 'd8' and tgtName == 'A'):
-                case.append('unsigned char src = get_byte(cpu, mem);\n')
-            
-            #Reading data from a register    
-            else:
-                case.append(f'unsigned char src = cpu -> {srcName.lower()};\n')
-                
-            case.append(f'unsigned char tgt = cpu -> {tgtName.lower()};\n')
-            case.append(f'unsigned char result = src + tgt;\n')
-            case.append(f'cpu->{tgtName.lower()} = result;\n')
-            
-            #Set flags
-            case.append('SET_ZF(cpu, (result == 0));\n')
-            case.append('SET_NF(cpu, 0);\n')
-            case.append('SET_HF(cpu, HC_CHECK(src, tgt));\n')
-            case.append('SET_CF(cpu, C_CHECK(src, tgt, result));\n')
-            
-        #16 bit add    
-        elif srcName in ['BC', 'DE', 'EF', 'HL', 'SP']:
-            case.append(f'unsigned short src = GET_{srcName}(cpu);\n')
-            case.append(f'unsigned short tgt = GET_{tgtName}(cpu);\n')
-            case.append('unsigned short result = src + tgt;\n')
-            case.append(f'SET_{tgtName}(cpu, result);\n')
-            
-            #Set flags
-            case.append('SET_NF(cpu,0);\n')
-            #Checking if a carry occurs from bit 11 to 12
-            case.append('SET_HF(cpu, HC_CHECK_16B_ADD(src, tgt));\n')
-            case.append('SET_CF(cpu, C_CHECK(src, tgt, result));\n')
-            
-        #Signed addition to the stack pointer
-        elif srcName == 'r8':
-            case.append('unsigned char src = get_byte(cpu, mem);\n')
-            case.append('int  srcInt = (int) src;\n')
-            case.append(f'unsigned short tgt = GET_{tgtName}(cpu);\n')
-            case.append('int tgtInt = (int) tgt;\n')
-            #??
-            case.append('unsigned short result = (unsigned short)(srcInt + tgtInt);\n')
-            case.append(f'SET_{tgtName}(cpu, result);\n')
-            
-            #set flags
-            #??
-            case.append('SET_HF(cpu, HC_CHECK(src, tgt);\n')
-            #This needs to be tested with a test ROM, not sure on the behavior here
-            case.append('SET_CF(cpu, src, tgt, result);\n')
-        
-        else:
-            self.print_case_error('src', src)
-            return
-            
-        
-        
-        return self.prepare_case(case)
-            
-            
-        
-        
-    
-    def _build_case_inc(self, tgt, src, bytes):
-        """
-        The increment operation adds 1 to a target register. There's two flavors:
-        1) We're incrementing an 8 bit register, either in the CPU, or in memory
-        2) We're incrementing a 16 bit register in the CPU
-        
-        The 16b operation is simpler, it sets no flags. Flags across all 8bit operations 
-        are the same as well, so this is done in a helper function
-        """
-        
-        tgtName = tgt[0]
-        tgtImmediate = tgt[1]
-        case = []
-        
-        #We're incrementing an 8 bit registers
-        if tgtName in ['A', 'B', 'C', 'D', 'E', 'H', 'L']:
-            case.append(f'unsigned char toInc = cpu -> {tgtName.lower()};\n')
-            case.append('unsigned char incremented = toInc + 1;\n')
-            case.append(f'cpu -> {tgtName.lower()};\n')
-            self._build_flags_inc(case)
-        
-        #Incrementing an 8 bit register in memory    
-        elif tgtName =='HL' and tgtImmediate == 0:
-            case.append(f'unsigned char toInc = read_mem(mem, GET_HL(cpu));\n')
-            case.append('unsigned char incremented = toInc + 1;\n')
-            case.append(f'write_mem(mem, GET_HL(cpu), incremented);\n')
-            self._build_flags_inc(case)
-            
-        elif tgtName in ['BC', 'DE', 'HL', 'SP']:
-            case.append(f'unsigned short toInc = GET_{tgtName}(cpu);\n')
-            case.append('unsigned short incremented = toInc + 1;\n')
-            case.append(f'SET_{tgtName}(cpu, incremented);\n')
-        else:
-            self.print_case_error('tgt', tgt)
-            return
-            
-        
-        return self.prepare_case(case)
-            
-    def _build_flags_inc(self, case):
-        case.append('SET_ZF(cpu, (incremented == 0));\n')
-        case.append('SET_NF(cpu, 0);\n')
-        case.append('SET_HF(cpu, HC_CHECK(toInc, 0x1));\n')
-
-    def _build_case_swap(self, tgt, src, bytes):
-        tgtName = tgt[0]
-        case = []
-        
-        
-        if tgtName in ['A', 'B', 'C', 'D', 'E', 'H', 'L']:
-            case.append(f'unsigned char toSwap = cpu->{tgtName.lower()};\n')
-            case.append ('unsigned char swapped = swap_nibble(toSwap);\n')
-            case.append(f'cpu->{tgtName.lower()} = swapped;\n')
-        
-        elif tgtName =='HL':
-            case.append('unsigned char toSwap = read_mem(mem, GET_HL(cpu));\n')
-            case.append('unsigned char swapped = swap_nibble(toSwap);\n')
-            case.append('write_mem(mem, GET_HL(cpu), swapped;\n')
-        
-        else:
-            self.print_case_error('tgt', tgt)
-            return
-        
-        
-        
-        return self.prepare_case(case)
-    
-    def _build_case_bit(self, tgt, src, bytes):
-        """
-        Creates case statements for the BIT operation. This operation takes the compliment of a given bit from a register, and stores that value into the Z flag of the
-        cpu. The src registers can be any of the 8 bit registers in the CPU, or from the value of an address pointed to by the HL register
-        """
-        case = []
-        srcName = src[0]
-        tgtName = tgt[0]
-        
-        
-        #Get registers directly from the CPU
-        if srcName in ['A', 'B', 'C', 'D', 'E', 'H', 'L']:
-            case.append(f'unsigned char bit = get_bit((int) cpu -> {srcName.lower()}, {tgtName});\n')
-        
-        #Memory addresses are read from mem    
-        elif srcName == 'HL':
-            case.append(f'unsigned char bit = get_bit((int) read_mem(cpu, GET_HL(CPU), {tgtName}));\n')
-            
-        else:
-            self.print_case_error('src', src)
-            return
-            
-        #Just checking the tgt name, to make sure it is a valid bit position    
-        if tgtName in [f'{i}' for i in range(8)]:
-            pass
-        else:
-            self.print_case_error('tgt', tgt)
-            return
-        
-            
-            
-        case.append('unsigned char compliment = (bit == 0 : 1 : 0);\n')
-        case.append('SET_ZF(cpu, compliment);\n')
-        
-        
-        return self.prepare_case(case)
-        
-                
     
     def _build_case_ld(self, tgt, src, bytes):
         """
@@ -740,164 +337,8 @@ class OpcodeGenerator:
         #Indent the lines of code in the case statement, and join them together into a single string    
         return self.prepare_case(case)
     
-    def _build_case_set_reset(self, val, tgt, src, bytes):
-        """
-        The set/ reset functions are taking a bit of some register, and setting it to 1 or 0. The first 'operand' (not really passed as one, but represented as
-        such in the dataset) is the bit, the second is the register. There's two main patterns
-        
-        bit -> register
-        bit -> memory location
+            
 
-        """
-        
-        bit = tgt[0]
-        reg = src[0]
-        
-        
-        case = []
-        
-        if reg in ['A','F','B','C','D','E','H','L']:
-            case.append(f"set_bit_char(&(cpu->{reg.lower()}), {bit}, 1);\n")
-            
-        elif reg == "HL":
-            case.append("unsigned char addr = read_mem(mem, GET_HL(cpu));\n")
-            case.append(f'set_bit_char(&addr, {bit}, {val});\n')
-        
-        else:
-            self.print_case_error("src and tgt", src)
-            print(tgt)
-            return
-        
-        return self.prepare_case(case)
-            
-    def create_cases(self, mnemonic, indentLevel = 2):
-        """
-        Creates the case statements for a given mnemonic. High level this consists of
-        
-        1) Running two queries to get information on all operations with a particular mnemonic
-        2) Creating a comment, outlining that we are starting a new section of cases
-        3) Creating the case statement. Every case statement has 
-            * A declaration case VAL {
-            
-            * Variable creations and assignments. This is deferred to a function specified 
-              by each mnemonic, which may wrap others depending on how complicated it is to implement
-              each mnenonic
-              
-            * A statement to increment the timer by some number of cycles
-            
-            * A break statement
-            
-            * A closing bracket
-            
-        Variable creation and assignment functions are found in self.case_builder. Descriptions for comments
-        are in self.descriptions.
-        
-        To implement a new case, you need to create a function that will build the variable creation and assignment statements
-        link this with the mnemonic in self.case_builder, create a description of the new cas linked with the mnemonic
-        in self.descriptions
-        
-        Some tricks
-        
-        The function reference in self.case_builder needs to have the following signature
-        
-        fn(self, [optional args], src, tgt, bytes)
-        where
-        [optional args]: Not optional in the traditional python sense. These are positional arguments that are evaluated at the time
-        the function is specified in the case_builder dict. 
-        
-        An example of this is the set/reset operations. These behave exactly the same, except for the value the bit is set to.
-        Instead of duplicating the functions, the bit is specified using partial function evaluation, and the appropriate evaluation
-        is specified for each mnemonic.
-        
-        src: A tuple consisting of operand_name, op_immediate, op_action of the source operand
-        
-        tgt: A tuple consisting of operand_name, op_immediate, op_action of the target operand
-        
-        bytes: the size of the operand in bytes
-
-        """
-        self.indentLevel = indentLevel
-        #If the file already exists, clean it up.
-        #fName = f'{mnemonic}_cases.txt'
-        #self.cleanup(fName)
-        
-        #Execute the query that corresponds to this mnemonic
-        self.cur.execute(self.queries['mnemonicQuery'], (mnemonic,))
-        results = self.cur.fetchall()
-        
-        lines = []
-        
-        #Creating the comment to append each section of cases:
-        comment = []
-        commentString = f'  {mnemonic}: {self.descriptions[mnemonic]}\n'
-        dots = "*" * (len(commentString) + 1)
-        
-        comment.append('/' + dots + '\n')
-        comment.append(commentString)
-        comment.append(dots +  '/' + '\n')
-        
-        lines += list(map(self.indent_string, comment))
-        
-        for row in results:
-            code = row[0]
-            cycles = row[1]
-            bytes = row[2]
-            
-            #TODO: How should this be handled in cases where there's not 2 operands?
-            self.cur.execute(self.queries['operandQuery'], (code, 1))
-            tgt = self.cur.fetchone()
-            self.cur.execute(self.queries['operandQuery'], (code, 2))
-            src = self.cur.fetchone()
-            
-            
-            #prefixed opcodes will be dealt with in a separate function, it's assumed we've already ready the first CB byte
-            #so strip it
-            if '0xCB' in code:
-                code = code[0:2] + code[4:]
-            
-            #Call the function that will build the case statement for this particular operation
-            #with open(fName, 'a') as f:
-            
-                
-
-            srcName = src[0] if src is not None else None
-            tgtName = tgt[0] if tgt is not None else None
-            print(f'Creating case for {code} {tgtName} {srcName}')    
-            
-            #First see if we can generate a case for this code. 
-            #Need to increment and decrement the indent level so we match that of the inside of the case
-            self.indentLevel += 1
-            caseStr = self.case_builder[mnemonic](tgt, src, bytes)
-            self.indentLevel -= 1
-
-            
-            if caseStr:
-                
-                #If there's no source or target we need to provide some value, so provide a null one
-
-                
-                
-                lines.append(self.indent_string(f"case {code}:{{ //{mnemonic} {tgtName} {srcName}\n"))
-                #Inside the case staetment so indent
-                
-                
-                #write whatever the case statement has determined will be the code in this particular instance
-                #Case statement should be properly indented if it exists
-                lines.append(caseStr)
-                self.indentLevel += 1
-                #Update the cycles, break out and close the case
-                lines.append(self.indent_string(f'increment_timer(mem, {cycles});\n'))
-                lines.append(self.indent_string('break;\n'))
-                
-                #closing case statement
-                self.indentLevel -= 1
-                lines.append(self.indent_string("}\n\n"))
-                
-                
-            else:
-                print(f'Skipping case {code} as nothing returned by case builder function')
-                
-        return lines
     
     def generic_case_builder(self, operations, prefixed=False):
         """
@@ -913,8 +354,7 @@ class OpcodeGenerator:
         
         """
         
-        
-        
+        print("In Generic Case Builder")
         #File name decisions
         modifier = '' if not prefixed else 'prefixed_'
         fName = OpcodeReport.get_file_path(f'{modifier}opcodes.c')
@@ -940,14 +380,21 @@ class OpcodeGenerator:
             
             lines.append(self.indent_string('switch(opcode){\n'))
             
-            self.indentLevel = 2
             
-            
+            #When we actually start to create the cases, the indent level will be 2
+            caseFactory = OpcodeCase.CaseFactory(2)
             for mnemonic in operations:
-
-                lines += self.create_cases(mnemonic)
                 
-                #print(lines)
+                print(mnemonic)
+                self.indentLevel = 2
+                
+                #See if we have implemented the inside of the case statment before we make the case
+                cases = caseFactory.get_cases(mnemonic)
+
+                if cases:
+                    lines += cases.create_cases()
+                
+
             
 
             self.indentLevel = 1
@@ -963,8 +410,10 @@ class OpcodeGenerator:
         Wrapper for the generic case builder. For the GB there are two main classes of opcodes,
         prefixed and unprefixed. Here we specify which is which, and pass along to the case builder
         """
+        
+        print("In Build Case Files")
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP', 'SRA', 'SRL', 'SLA', 'RR', 'RRC', 'RL', 'RLC'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST', 'CP'])
+        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST', 'CP', 'JP'])
                     
                 
             
