@@ -899,5 +899,83 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			break;
 		}
 
+		/**************************
+		  RET: Return Operations
+		**************************/
+		case 0xC0:{ //RET NZ 
+			if(GET_ZF(cpu) == 0){
+				unsigned char lowByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned char highByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned short address = get_8b_to_16b(highByte, lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 20);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		case 0xC8:{ //RET Z 
+			if(GET_ZF(cpu) == 1){
+				unsigned char lowByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned char highByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned short address = get_8b_to_16b(highByte, lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 20);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		case 0xC9:{ //RET  
+			unsigned char lowByte = read_mem(mem, cpu->sp);
+			SET_SP(cpu, (GET_SP(cpu) + 1));
+			unsigned char highByte = read_mem(mem, cpu->sp);
+			SET_SP(cpu, (GET_SP(cpu) + 1));
+			unsigned short address = get_8b_to_16b(highByte, lowByte);
+			SET_PC(cpu, address);
+			increment_timer(mem, 16);
+			break;
+		}
+
+		case 0xD0:{ //RET NC 
+			if(GET_CF(cpu) == 0){
+				unsigned char lowByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned char highByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned short address = get_8b_to_16b(highByte, lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 20);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		case 0xD8:{ //RET C 
+			if(GET_CF(cpu) == 1){
+				unsigned char lowByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned char highByte = read_mem(mem, cpu->sp);
+				SET_SP(cpu, (GET_SP(cpu) + 1));
+				unsigned short address = get_8b_to_16b(highByte, lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 20);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
 	}
 }

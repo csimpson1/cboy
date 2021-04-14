@@ -26,7 +26,8 @@ class CaseFactory:
             'CP'  : CpCase,
             'SET' : SetCase,
             'RES' : ResetCase,
-            'JP'  : JumpCase
+            'JP'  : JumpCase,
+            'RET' : RetCase
             
             }
         
@@ -108,13 +109,24 @@ class OpcodeCase:
         if self.conn:
             self.conn.close()
 
-    def indent_string(self, string):
-        #Return a string with a specified number of tabs appended to the start
+    def indent_string(self, string, indentLevel = None):
+        
+        """
+        Return a string with a specified number of tabs appended to the start
+        If no indent is specified in the function, default to to the indent
+        level specified by the function. Otherwise, perform the custom indent
+        """
         indent=''
-        for i in range(self.indentLevel):
+        
+        #Default value is really the one specified by this object
+        if not indentLevel:
+            indentLevel = self.indentLevel
+        
+        for i in range(indentLevel):
             indent += '\t'
             
         return indent + string
+    
     
     def print_case_error(self, var, params):
             print(f'Error determining code for {var} variable')
@@ -989,10 +1001,134 @@ class JumpCase(OpcodeCase):
         
         return case
         
-              
+class RetCase(OpcodeCase):
+    
+    def __init__(self, indentLevel):
+        super().__init__('RET', False, indentLevel)
+        self.commentString = "Return Operations"
+        self.queries['mnemonicQuery'] = """
+                                select distinct code,cycles,conditional_cycles 
+                                from opcodes_v 
+                                where mnemonic=?; 
+                                """
+    
+    def _case_builder(self):
+        
+        """
+        Override the method in Opcode case to skip the cycle creation method. This will be handled in the create_case method.
+        Wrapper for the mnemonic specific implementation method. Handles which functions are called in creating the case statement.
+        If you want to call a different function based on some parameter, or change how the cycles are set, override this function
+        in your child class
+        """
+        
+        case = []
+        
+        case += self._create_case()
+        
+        return self.prepare_case(case)
         
         
+    def _create_case(self):
+        """
+        The RET functions check for the value of a given flag, and pop the previous value of the program counter
+        off of the stack if the flag condition is true. The exact condition will be loaded into the tgtName
+        """
+        case = []
         
+        """
+        #Get the address tp return to
+        case.append('unsigned char lowByte = read_mem(mem, cpu->sp);\n')
+        case.append('SET_SP(cpu, (GET_SP(cpu) + 1));\n')
+        case.append('unsigned char highByte = read_mem(mem, cpu->sp);\n')
+        case.append('SET_SP(cpu, (GET_SP(cpu) + 1));\n')
+        case.append('unsigned short address = get_8b_to_16b(highByte, lowByte);\n')
+        """
+        
+        if self.tgtName in ['Z', 'NZ', 'C', 'NC']:
+            case += self._create_conditional()
+            return case
+            
+        elif not self.tgtName:
+            #We have an unconditional return
+            case += self._get_address_from_stack()
+            case += self._load_address_set_cycles()
+            case.append('break;\n')
+            return case
+        
+        else:
+            self.print_case_error("tgt", self.tgtProperties)
+            return                        
+    
+    def _create_conditional(self):
+        
+        #If our tgtName starts with N, we are checking to see if a flag is 0 and will action accordingly.
+        #Otherwise, our tgtName specifies that we are checking to see if a flag is set to 1
+        
+
+        case = []
+        
+        if self.tgtName[0] == 'N':
+            value = '0'
+            flag = self.tgtName[1]
+        
+        else:
+            value = '1'
+            flag = self.tgtName[0]
+        
+        case.append(f'if(GET_{flag}F(cpu) == {value}){{\n')
+        
+        #We want to indent the inside of the IF block one tab further than the rest of the case
+        case += map(lambda string: self.indent_string(string,indentLevel=1), self._get_address_from_stack())
+        case += map(lambda string: self.indent_string(string,indentLevel=1), self._load_address_set_cycles())
+        
+        
+        case.append('}\n')
+        case.append('else{\n')
+        
+        #Again, want to set off the default case
+        case += map(lambda string: self.indent_string(string,indentLevel=1), self._dont_load_address_set_cycles())
+        
+        case.append('}\n')
+        case.append('break;\n')
+        
+        return case
+    
+    def _get_address_from_stack(self):
+        
+        """Create the portion of the case statement to load the address from the stack"""  
+        
+        case = []
+        
+        case.append('unsigned char lowByte = read_mem(mem, cpu->sp);\n')
+        case.append('SET_SP(cpu, (GET_SP(cpu) + 1));\n')
+        case.append('unsigned char highByte = read_mem(mem, cpu->sp);\n')
+        case.append('SET_SP(cpu, (GET_SP(cpu) + 1));\n')
+        case.append('unsigned short address = get_8b_to_16b(highByte, lowByte);\n')
+        
+        return case
+             
+    def _load_address_set_cycles(self):
+        
+        """
+        Create the subcase statement that corresponds to loading the address into the PC
+        register, and set the cycles accordingly
+        """
+        
+        case = []
+        conditionalCycles = self.mnemonicProperties[1]
+        
+        case.append('SET_PC(cpu, address);\n')
+        case.append(f'increment_timer(mem, {conditionalCycles});\n')
+        
+        return case  
+        
+    def _dont_load_address_set_cycles(self):
+        
+        case = []
+        cycles = self.mnemonicProperties[2]
+        case.append(f'increment_timer(mem, {cycles});\n')
+        
+        return case
         
 if __name__ == '__main__':
     case = SwapCase(2)
