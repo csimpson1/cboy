@@ -413,7 +413,7 @@ class OpcodeGenerator:
         
         print("In Build Case Files")
         self.generic_case_builder(['SET', 'RES', 'BIT', 'SWAP', 'SRA', 'SRL', 'SLA', 'RR', 'RRC', 'RL', 'RLC'], prefixed=True)
-        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST', 'CP', 'JP'])
+        self.generic_case_builder(['LD', 'INC', 'ADD', 'AND', 'OR', 'XOR', 'RST', 'CP', 'JP', 'RET'])
                     
                 
             
