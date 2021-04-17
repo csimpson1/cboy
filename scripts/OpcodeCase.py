@@ -1,6 +1,7 @@
 from functools import partialmethod
 import mariadb
 import sys
+from mock.mock import self
 
 class CaseFactory:
     
@@ -27,7 +28,8 @@ class CaseFactory:
             'SET' : SetCase,
             'RES' : ResetCase,
             'JP'  : JumpCase,
-            'RET' : RetCase
+            'RET' : RetCase,
+            'JR'  : JrCase
             
             }
         
@@ -902,115 +904,31 @@ class LdCase(OpcodeCase):
         self.commentString = 'LD operations'
 """
 
-class JumpCase(OpcodeCase):
-    
-    def __init__(self, indentLevel):
 
-        super().__init__('JP', False, indentLevel)
-        self.commentString = "Jump Operations"
-        
-        self.queries['mnemonicQuery'] = """
-                                        select distinct code,cycles,conditional_cycles 
-                                        from opcodes_v 
-                                        where mnemonic=?; 
-                                        """
-        
-    def _case_builder(self):
-        """ 
-        Overrides the _case_builder function from the OpcodeCase class. Flags are set conditionally, so will
-        be set as a part of the _create_case() function. 
-        """
-        case = []
-        case += self._create_case()
-        
-        return self.prepare_case(case)
+class ConditionalCase(OpcodeCase):
     
-    def _create_case(self):
-        """
-        The JP or jump command loads a value into the PC if a certain condition is met (one operation is
-        actually an unconditional jump). If the condition fails, then the next operation following the JP
-        instruction is executed.
-        
-        One of the more interesting cases, as we need to consider that the cycles are different 
-        here depending on if the JP is executed or not.
-        """
-        
-        case = []
-        
-        if self.tgtName == 'a16':
-            case += self._get_address()
-            case.append('SET_PC(cpu, address);\n')
-            case += self._create_cycles()
-            return case
-        
-        elif self.tgtName == 'HL':
-            case.append('SET_PC(cpu, GET_HL(cpu));\n')
-            case += self._create_cycles()
-            return case
-            
-        elif self.tgtName in ['NZ', 'Z', 'NC', 'C']:
-            case += self._get_address()
-            case += self._jp_conditional()
-            return case
-            
-        
-        else:
-            self.print_case_error("src and tgt", self.srcProperties)
-            print(self.tgtProperties)
-            return
-        
-    def _get_address(self):
-        statements = []
-        statements.append("unsigned char lowByte = get_byte(cpu, mem);\n")
-        statements.append("unsigned char highByte = get_byte(cpu, mem);\n")
-        statements.append("unsigned short address = _get_8b_to_16b(&highByte, &lowByte);\n")
-        return statements
+    """
+    The ConditionalCase class is meant to abstract the different operations where a flag is checked, and some code
+    is performed depending on the result. Often a different number of cycles is needed for each branch. To make this more
+    interesting, there's often an unconditional version of the same operation.
     
-    def _jp_conditional(self):
-        
-        case = []
-        conditionalCycles = self.mnemonicProperties[2]
-        cycles = self.mnemonicProperties[1]
-        
-        if 'N' in self.tgtName:
-            #We need to check to see if the corresponding flag is 0
-            flag = self.tgtName[1:]
-            case.append(f'if GET_{flag}F(cpu) == 0:{{\n')
-            
-        else:
-            flag = self.tgtName[0:1]
-            case.append(f'if GET_{flag}F(cpu) == 1:{{\n')
-            
-        self.indentLevel += 1
-        
-        case.append(self.indent_string('SET_PC(cpu, address);\n'))
-        case.append(self.indent_string(f'increment_timer(mem, {conditionalCycles});\n'))
-        
-        self.indentLevel -= 1
-        case.append('}\n\n')
-        case.append('else {\n')
-        
-        self.indentLevel += 1
-        
-        case.append(self.indent_string(f'increment_timer(mem, {cycles});\n'))
-        
-        self.indentLevel -= 1
-        case.append('}\n\n')
-        case.append('break;\n')
-        
-        
-        return case
-        
-class RetCase(OpcodeCase):
+    ConditionalCase has three method stubs that should be filled in by child classes
     
-    def __init__(self, indentLevel):
-        super().__init__('RET', False, indentLevel)
-        self.commentString = "Return Operations"
+    _create_true_branch: This function creates the subcase for the true branch of the conditional version of the operation.
+    
+    _create_false_branch: This function creates the subcase for the false branch of the conditional version of the operation
+    
+    _create_unconditional: This function creates the case for the unconditional version of the operation
+    """
+    
+    
+    def __init__(self,mnemonic, indentLevel):
+        super().__init__(mnemonic, False, indentLevel)
         self.queries['mnemonicQuery'] = """
                                 select distinct code,cycles,conditional_cycles 
                                 from opcodes_v 
-                                where mnemonic=?; 
-                                """
+                                where mnemonic=?;"""
+                                
     
     def _case_builder(self):
         
@@ -1025,71 +943,210 @@ class RetCase(OpcodeCase):
         
         case += self._create_case()
         
-        return self.prepare_case(case)
-        
-        
+        return self.prepare_case(case)                           
+                                 
     def _create_case(self):
         """
-        The RET functions check for the value of a given flag, and pop the previous value of the program counter
-        off of the stack if the flag condition is true. The exact condition will be loaded into the tgtName
+        Determines whether we need to create a conditional version of a case, or an unconditional version of a case
         """
         case = []
         
-        """
-        #Get the address tp return to
-        case.append('unsigned char lowByte = read_mem(mem, cpu->sp);\n')
-        case.append('SET_SP(cpu, (GET_SP(cpu) + 1));\n')
-        case.append('unsigned char highByte = read_mem(mem, cpu->sp);\n')
-        case.append('SET_SP(cpu, (GET_SP(cpu) + 1));\n')
-        case.append('unsigned short address = get_8b_to_16b(highByte, lowByte);\n')
-        """
-        
         if self.tgtName in ['Z', 'NZ', 'C', 'NC']:
-            case += self._create_conditional()
+            
+            #This code determines which value we are comparing our flag agains
+            if self.tgtName[0] == 'N':
+                value = '0'
+                flag = self.tgtName[1]
+            
+            else:
+                value = '1'
+                flag = self.tgtName[0]
+            
+            case.append(f'if(GET_{flag}F(cpu) == {value}){{\n')
+            
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._create_true_branch())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._conditional_set_cycles())
+            
+            case.append('}\n')
+            case.append('else{\n')
+            
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._create_false_branch())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._set_cycles())
+            
+            case.append('}\n')
+            case.append('break;\n')            
+                
+            
             return case
             
         elif not self.tgtName:
             #We have an unconditional return
+            """
             case += self._get_address_from_stack()
-            case += self._load_address_set_cycles()
+            case += self._conditional_set_cycles()
             case.append('break;\n')
+            """
+            case += self._create_unconditional()
+            case += self._conditional_set_cycles()
+            
             return case
         
         else:
             self.print_case_error("tgt", self.tgtProperties)
-            return                        
+            return 
     
-    def _create_conditional(self):
+    
+    def _create_true_branch(self):
+        return []
+    
+    def _create_false_branch(self):
+        return []
+    
+    def _create_unconditional(self):
+        return []
+    
         
-        #If our tgtName starts with N, we are checking to see if a flag is 0 and will action accordingly.
-        #Otherwise, our tgtName specifies that we are checking to see if a flag is set to 1
+    def _conditional_set_cycles(self):
         
+        """
+        Create the subcase statement that corresponds to loading the address into the PC
+        register, and set the cycles accordingly
+        """
+        
+        case = []
+        conditionalCycles = self.mnemonicProperties[1]
+        
+        case.append('SET_PC(cpu, address);\n')
+        case.append(f'increment_timer(mem, {conditionalCycles});\n')
+        
+        return case  
+        
+    def _set_cycles(self):
+        """
+        Create the subcase statements that correspond to us not executing the conditional operation,
+        set the cycles as such
+        """
+        
+        case = []
+        cycles = self.mnemonicProperties[2]
+        case.append(f'increment_timer(mem, {cycles});\n')
+        
+        return case    
 
+class JumpCase(ConditionalCase):
+    def __init__(self, indentLevel):
+
+        super().__init__('JP', indentLevel)
+        self.commentString = "Jump Operations"
+    
+    def _create_case(self):
+        """
+        Determines whether we need to create a conditional version of a case, or an unconditional version of a case
+        """
         case = []
         
-        if self.tgtName[0] == 'N':
-            value = '0'
-            flag = self.tgtName[1]
+        if self.tgtName in ['Z', 'NZ', 'C', 'NC']:
+            
+            #This code determines which value we are comparing our flag agains
+            if self.tgtName[0] == 'N':
+                value = '0'
+                flag = self.tgtName[1]
+            
+            else:
+                value = '1'
+                flag = self.tgtName[0]
+            
+            case.append(f'if(GET_{flag}F(cpu) == {value}){{\n')
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._get_address())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._create_true_branch())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._conditional_set_cycles())
+            
+            case.append('}\n')
+            case.append('else{\n')
+            
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._create_false_branch())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._set_cycles()) 
+            
+            case.append('}\n')
+            case.append('break;\n')            
+                
+            
+            return case
+            
+        elif self.tgtName in ['a16', 'HL']:
+            #We have an unconditional return
+            """
+            case += self._get_address_from_stack()
+            case += self._conditional_set_cycles()
+            case.append('break;\n')
+            """
+            case += self._create_unconditional()
+            return case
         
         else:
-            value = '1'
-            flag = self.tgtName[0]
+            self.print_case_error("tgt", self.tgtProperties)
+            return 
+    
+    
+#     def _create_true_branch(self):
+#         
+#         case = ['SET_PC(cpu, address);\n']
+#         return case
+    
+     
+    def _create_unconditional(self):
         
-        case.append(f'if(GET_{flag}F(cpu) == {value}){{\n')
+        case = []
         
-        #We want to indent the inside of the IF block one tab further than the rest of the case
-        case += map(lambda string: self.indent_string(string,indentLevel=1), self._get_address_from_stack())
-        case += map(lambda string: self.indent_string(string,indentLevel=1), self._load_address_set_cycles())
+        if self.tgtName == 'a16':
+            case += self._get_address()
+            case.append('SET_PC(cpu, address);\n')
+            case += self._set_cycles()
+            
         
+        elif self.tgtName == 'HL':
+            case.append('SET_PC(cpu, GET_HL(cpu));\n')
+            case += self._set_cycles()
+            
+        return case
+
+    def _get_address(self):
+        statements = []
+        statements.append("unsigned char lowByte = get_byte(cpu, mem);\n")
+        statements.append("unsigned char highByte = get_byte(cpu, mem);\n")
+        statements.append("unsigned short address = _get_8b_to_16b(&highByte, &lowByte);\n")
+        return statements
+
+       
+class RetCase(ConditionalCase):
+    
+    def __init__(self, indentLevel):
+        super().__init__('RET', indentLevel)
+        self.commentString = "Return Operations"
+                    
+    
+    def _create_true_branch(self):
+        case = []
         
-        case.append('}\n')
-        case.append('else{\n')
+        case += self._get_address_from_stack()
+    
         
-        #Again, want to set off the default case
-        case += map(lambda string: self.indent_string(string,indentLevel=1), self._dont_load_address_set_cycles())
+        return case
+    
+    def _create_false_branch(self):
         
-        case.append('}\n')
-        case.append('break;\n')
+        case = []
+        
+        case += self._set_cycles()
+        
+        return case
+    
+    
+    def _create_unconditional(self):
+        case = []
+        
+        case += self._get_address_from_stack()
+        case.append("break;\n")
         
         return case
     
@@ -1107,28 +1164,100 @@ class RetCase(OpcodeCase):
         
         return case
              
-    def _load_address_set_cycles(self):
+
         
-        """
-        Create the subcase statement that corresponds to loading the address into the PC
-        register, and set the cycles accordingly
-        """
+class JrCase(ConditionalCase):
+    
+    def __init__(self, indentLevel):
         
-        case = []
-        conditionalCycles = self.mnemonicProperties[1]
+        super().__init__('JR', indentLevel)
+        self.commentString ="Relative Jump operations"
         
-        case.append('SET_PC(cpu, address);\n')
-        case.append(f'increment_timer(mem, {conditionalCycles});\n')
-        
-        return case  
-        
-    def _dont_load_address_set_cycles(self):
+    
+    def _create_true_branch(self):
         
         case = []
-        cycles = self.mnemonicProperties[2]
-        case.append(f'increment_timer(mem, {cycles});\n')
+        
+        case += self._get_address()
+        return case
+    
+#     def _create_false_branch(self):
+#         
+#         case = [';\n']
+#         return case
+#     #map(lambda string: self.indent_string(string,indentLevel=1), case)
+        
+    
+    def _create_unconditional(self):
+        """
+        The unconditional action in this case is the same as in the true branch
+        """
+        
+        return self._create_true_branch()
+    
+    def _get_address(self):
+        
+        """
+        Making an assumption here about unsigned integers in C that needs to be checked out.
+        The data that we are getting from memory is to be interpreted as a signed number, 
+        but unsigned + signed is undefined? So things should be cast to be the same type,
+        but get_byte returns an unsigned char: how will the cast work?
+        """
+        case = ['signed short address = (signed short)GET_PC(cpu) + (signed short) get_byte(cpu, mem);\n']
         
         return case
+     
+    def _create_case(self):
+        """
+        Determines whether we need to create a conditional version of a case, or an unconditional version of a case
+        Overwrites the method in the parent class because the flag is actually in srcName for this operation
+        """
+        case = []
+        
+        if self.tgtName in ['Z', 'NZ', 'C', 'NC']:
+            
+            #This code determines which value we are comparing our flag agains
+            if self.tgtName[0] == 'N':
+                value = '0'
+                flag = self.tgtName[1]
+            
+            else:
+                value = '1'
+                flag = self.tgtName[0]
+            
+            case.append(f'if(GET_{flag}F(cpu) == {value}){{\n')
+            
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._create_true_branch())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._conditional_set_cycles())
+            
+            case.append('}\n')
+            case.append('else{\n')
+            
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._create_false_branch())
+            case += map(lambda string: self.indent_string(string,indentLevel=1), self._set_cycles())
+            
+            case.append('}\n')
+            case.append('break;\n')            
+                
+            
+            return case
+            
+        elif self.tgtName == 'r8':
+            #We have an unconditional return
+            """
+            case += self._get_address_from_stack()
+            case += self._conditional_set_cycles()
+            case.append('break;\n')
+            """
+            case += self._create_unconditional()
+            case += self._conditional_set_cycles()
+            
+            return case
+        
+        else:
+            self.print_case_error("src", self.srcProperties)
+            return 
+        
         
 if __name__ == '__main__':
     case = SwapCase(2)

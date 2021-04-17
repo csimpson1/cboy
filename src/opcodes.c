@@ -821,18 +821,16 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 		  JP: Jump Operations
 		***********************/
 		case 0xC2:{ //JP NZ a16
-			unsigned char lowByte = get_byte(cpu, mem);
-			unsigned char highByte = get_byte(cpu, mem);
-			unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
-			if GET_ZF(cpu) == 0:{
-							SET_PC(cpu, address);
-							increment_timer(mem, 12);
+			if(GET_ZF(cpu) == 0){
+				unsigned char lowByte = get_byte(cpu, mem);
+				unsigned char highByte = get_byte(cpu, mem);
+				unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 16);
 			}
-
-			else {
-							increment_timer(mem, 16);
+			else{
+				increment_timer(mem, 12);
 			}
-
 			break;
 		}
 
@@ -841,62 +839,54 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			unsigned char highByte = get_byte(cpu, mem);
 			unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
 			SET_PC(cpu, address);
-			increment_timer(mem, 16);
-			break;
+			increment_timer(mem, None);
 		}
 
 		case 0xCA:{ //JP Z a16
-			unsigned char lowByte = get_byte(cpu, mem);
-			unsigned char highByte = get_byte(cpu, mem);
-			unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
-			if GET_ZF(cpu) == 1:{
-							SET_PC(cpu, address);
-							increment_timer(mem, 12);
+			if(GET_ZF(cpu) == 1){
+				unsigned char lowByte = get_byte(cpu, mem);
+				unsigned char highByte = get_byte(cpu, mem);
+				unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 16);
 			}
-
-			else {
-							increment_timer(mem, 16);
+			else{
+				increment_timer(mem, 12);
 			}
-
 			break;
 		}
 
 		case 0xD2:{ //JP NC a16
-			unsigned char lowByte = get_byte(cpu, mem);
-			unsigned char highByte = get_byte(cpu, mem);
-			unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
-			if GET_CF(cpu) == 0:{
-							SET_PC(cpu, address);
-							increment_timer(mem, 12);
+			if(GET_CF(cpu) == 0){
+				unsigned char lowByte = get_byte(cpu, mem);
+				unsigned char highByte = get_byte(cpu, mem);
+				unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 16);
 			}
-
-			else {
-							increment_timer(mem, 16);
+			else{
+				increment_timer(mem, 12);
 			}
-
 			break;
 		}
 
 		case 0xDA:{ //JP C a16
-			unsigned char lowByte = get_byte(cpu, mem);
-			unsigned char highByte = get_byte(cpu, mem);
-			unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
-			if GET_CF(cpu) == 1:{
-							SET_PC(cpu, address);
-							increment_timer(mem, 12);
+			if(GET_CF(cpu) == 1){
+				unsigned char lowByte = get_byte(cpu, mem);
+				unsigned char highByte = get_byte(cpu, mem);
+				unsigned short address = _get_8b_to_16b(&highByte, &lowByte);
+				SET_PC(cpu, address);
+				increment_timer(mem, 16);
 			}
-
-			else {
-							increment_timer(mem, 16);
+			else{
+				increment_timer(mem, 12);
 			}
-
 			break;
 		}
 
 		case 0xE9:{ //JP HL 
 			SET_PC(cpu, GET_HL(cpu));
-			increment_timer(mem, 4);
-			break;
+			increment_timer(mem, None);
 		}
 
 		/**************************
@@ -914,6 +904,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			}
 			else{
 				increment_timer(mem, 8);
+				increment_timer(mem, 8);
 			}
 			break;
 		}
@@ -930,6 +921,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			}
 			else{
 				increment_timer(mem, 8);
+				increment_timer(mem, 8);
 			}
 			break;
 		}
@@ -940,9 +932,9 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			unsigned char highByte = read_mem(mem, cpu->sp);
 			SET_SP(cpu, (GET_SP(cpu) + 1));
 			unsigned short address = get_8b_to_16b(highByte, lowByte);
+			break;
 			SET_PC(cpu, address);
 			increment_timer(mem, 16);
-			break;
 		}
 
 		case 0xD0:{ //RET NC 
@@ -957,6 +949,7 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 			}
 			else{
 				increment_timer(mem, 8);
+				increment_timer(mem, 8);
 			}
 			break;
 		}
@@ -970,6 +963,64 @@ void interpret_opcodes(CPU *cpu, unsigned char *mem, unsigned char opcode){
 				unsigned short address = get_8b_to_16b(highByte, lowByte);
 				SET_PC(cpu, address);
 				increment_timer(mem, 20);
+			}
+			else{
+				increment_timer(mem, 8);
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		/********************************
+		  JR: Relative Jump operations
+		********************************/
+		case 0x18:{ //JR r8 
+			signed short address = (signed short)GET_PC(cpu) + (signed short) get_byte(cpu, mem);
+			SET_PC(cpu, address);
+			increment_timer(mem, 12);
+		}
+
+		case 0x20:{ //JR NZ r8
+			if(GET_ZF(cpu) == 0){
+				signed short address = (signed short)GET_PC(cpu) + (signed short) get_byte(cpu, mem);
+				SET_PC(cpu, address);
+				increment_timer(mem, 12);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		case 0x28:{ //JR Z r8
+			if(GET_ZF(cpu) == 1){
+				signed short address = (signed short)GET_PC(cpu) + (signed short) get_byte(cpu, mem);
+				SET_PC(cpu, address);
+				increment_timer(mem, 12);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		case 0x30:{ //JR NC r8
+			if(GET_CF(cpu) == 0){
+				signed short address = (signed short)GET_PC(cpu) + (signed short) get_byte(cpu, mem);
+				SET_PC(cpu, address);
+				increment_timer(mem, 12);
+			}
+			else{
+				increment_timer(mem, 8);
+			}
+			break;
+		}
+
+		case 0x38:{ //JR C r8
+			if(GET_CF(cpu) == 1){
+				signed short address = (signed short)GET_PC(cpu) + (signed short) get_byte(cpu, mem);
+				SET_PC(cpu, address);
+				increment_timer(mem, 12);
 			}
 			else{
 				increment_timer(mem, 8);
